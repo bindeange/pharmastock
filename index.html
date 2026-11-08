@@ -1,0 +1,2804 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2563eb">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192x192.png">
+<script src="./xlsx.full.min.js" defer></script>
+<title>Pharma Inventaire</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f1f5f9;color:#1e293b;min-height:100vh}
+:root{--pri:#2563eb;--pri-l:#eff6ff;--sec:#10b981;--danger:#ef4444;--gray:#64748b;--border:#e2e8f0;--radius:12px;--shadow:0 2px 8px rgba(0,0,0,.1)}
+.hidden{display:none!important}
+.mt1{margin-top:.8rem}
+
+/* HEADER */
+.hdr{position:sticky;top:0;z-index:100;height:56px;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 1rem;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.hdr h1{font-size:1.05rem;font-weight:700}
+.hdr button{background:none;border:none;color:#fff;font-size:1.3rem;padding:8px;cursor:pointer;border-radius:8px;line-height:1}
+.hdr button:active{background:rgba(255,255,255,.2)}
+#btn-sync{position:relative}
+.badge{position:absolute;top:2px;right:2px;background:var(--danger);color:#fff;border-radius:10px;font-size:.6rem;padding:1px 4px;font-weight:700;pointer-events:none}
+
+/* VIEWS */
+.view{display:none;padding-bottom:100px}
+.view.active{display:block!important}
+
+/* DASHBOARD */
+.dash{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;padding:.75rem}
+.card{background:#fff;border:none;border-radius:var(--radius);padding:1.2rem .75rem;display:flex;flex-direction:column;align-items:center;gap:.55rem;box-shadow:var(--shadow);cursor:pointer;font-weight:700;font-size:.82rem;text-align:center;color:#1e293b}
+.card:active{opacity:.8}
+.card .i{font-size:1.75rem;line-height:1}
+.pri{background:var(--pri);color:#fff}
+.sec{background:var(--sec);color:#fff}
+.pri-l{background:var(--pri-l);color:var(--pri)}
+
+/* FORMS */
+.fbox{background:#fff;margin:.75rem;padding:1rem;border-radius:var(--radius);box-shadow:var(--shadow)}
+.fbox h2{font-size:1rem;font-weight:700;margin-bottom:.9rem}
+.fg{margin-bottom:.85rem}
+.fg label{display:block;font-weight:600;font-size:.82rem;margin-bottom:.3rem;color:#1e293b}
+.fg input,.fg select{width:100%;padding:.75rem;border:1.5px solid var(--border);border-radius:8px;font-size:1rem;color:#1e293b;background:#fff;-webkit-appearance:none}
+.fg input:focus,.fg select:focus{border-color:var(--pri);outline:none;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+.btn{border:none;border-radius:8px;padding:.8rem 1rem;font-weight:700;font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.35rem;width:100%;margin-top:.5rem}
+.btn:active{opacity:.8}
+.b-pri{background:var(--pri);color:#fff}
+.b-sec{background:var(--sec);color:#fff}
+.b-out{background:#fff;border:1.5px solid var(--border);color:#1e293b}
+.b-suc{background:var(--sec);color:#fff}
+
+/* CONTROLS BAR */
+.ctrl{position:sticky;top:56px;background:#fff;padding:.7rem;z-index:50;border-bottom:1px solid var(--border)}
+.ctrl select{width:100%;padding:.65rem;border:1.5px solid var(--border);border-radius:8px;font-size:.9rem;background:#fff;-webkit-appearance:none;margin-bottom:.5rem}
+.sbar{display:flex;gap:.5rem}
+.sbar input{flex:1;padding:.7rem;border:1.5px solid var(--border);border-radius:8px;font-size:.95rem}
+.sbar button{padding:.7rem 1rem;border:none;border-radius:8px;background:var(--sec);color:#fff;font-size:1rem;cursor:pointer}
+
+/* LIST */
+.lst{padding:.75rem}
+.item{background:#fff;padding:.9rem;border-radius:var(--radius);margin-bottom:.6rem;box-shadow:var(--shadow)}
+.item h4{font-size:.92rem;margin-bottom:.2rem}
+.item .meta{color:var(--gray);font-size:.78rem;margin-bottom:.4rem}
+.item .btn-inv{margin-top:.5rem;padding:.6rem;border:none;border-radius:8px;background:var(--pri);color:#fff;font-weight:700;font-size:.85rem;width:100%;cursor:pointer}
+.item .btn-inv:active{opacity:.8}
+
+/* FAB */
+.fab{position:fixed;bottom:20px;right:14px;height:50px;padding:0 16px 0 12px;border-radius:25px;border:none;background:var(--pri);color:#fff;display:flex;align-items:center;gap:7px;box-shadow:0 4px 16px rgba(37,99,235,.5);font-weight:700;font-size:.88rem;cursor:pointer;z-index:200}
+.fab:active{opacity:.85}
+.fab-c{width:26px;height:26px;background:rgba(255,255,255,.25);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700}
+
+/* SCANNER */
+.scan-box{position:relative;width:100%;height:270px;background:#000;overflow:hidden}
+#camera-preview{width:100%;height:100%;object-fit:cover}
+.scan-ovl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.scan-frm{width:200px;height:200px;border:3px solid #fff;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.5)}
+#manual-wrap{display:none;padding:.75rem}
+#manual-wrap .sbar{margin-top:.5rem}
+#scan-result{padding:.75rem;min-height:60px}
+
+/* MODAL */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;display:flex;align-items:flex-end}
+.mbox{background:#fff;width:100%;max-height:92vh;overflow-y:auto;border-radius:16px 16px 0 0}
+.mhd{position:sticky;top:0;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:.85rem 1rem;border-bottom:1px solid var(--border);z-index:10}
+.mhd h3{font-size:.95rem;font-weight:700}
+.mclose{background:none;border:none;font-size:1.2rem;color:var(--gray);cursor:pointer;padding:4px 8px;border-radius:6px}
+.mclose:active{background:var(--border)}
+.mbody{padding:1rem}
+.mfooter{display:flex;gap:.6rem;padding:.75rem 1rem;border-top:1px solid var(--border)}
+.mfooter .btn{flex:1;margin-top:0}
+
+/* STEPS */
+.steps{display:flex;align-items:center;justify-content:center;padding:.7rem;background:#fff;border-bottom:1px solid var(--border);gap:0}
+.sdot{display:flex;flex-direction:column;align-items:center;gap:3px}
+.snum{width:28px;height:28px;border-radius:50%;background:#f1f5f9;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;color:var(--gray)}
+.slbl{font-size:.62rem;color:var(--gray);white-space:nowrap}
+.sdot.active .snum{background:var(--pri);border-color:var(--pri);color:#fff}
+.sdot.active .slbl{color:var(--pri);font-weight:700}
+.sdot.done .snum{background:var(--sec);border-color:var(--sec);color:#fff}
+.sline{width:28px;height:2px;background:var(--border);margin-bottom:13px}
+.spane{display:none;padding:1rem}
+.spane.active{display:block}
+.sact{display:flex;gap:.6rem;margin-top:1rem;padding-top:.9rem;border-top:1px solid var(--border)}
+.sact .btn{flex:1;margin-top:0}
+
+/* SECTION LABEL */
+.sl{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--pri);margin-bottom:.6rem;margin-top:.4rem}
+
+/* TOGGLE */
+.trow{background:#f8fafc;border-radius:10px;padding:.75rem;margin-bottom:.75rem}
+.tlbl{display:flex;align-items:center;gap:.7rem;cursor:pointer;font-weight:600;font-size:.88rem}
+.tlbl input{display:none}
+.tsw{width:42px;height:22px;background:var(--border);border-radius:11px;position:relative;transition:background .25s;flex-shrink:0}
+.tsw::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:2px;left:2px;transition:left .25s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.tlbl input:checked+.tsw{background:var(--pri)}
+.tlbl input:checked+.tsw::after{left:22px}
+.lot-box{border:1.5px dashed var(--pri);border-radius:10px;background:var(--pri-l);padding:.85rem;margin-top:.5rem}
+
+/* SUGGEST */
+.sw{position:relative}
+.sug{position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--border);border-top:none;border-radius:0 0 8px 8px;z-index:50;max-height:130px;overflow-y:auto;box-shadow:var(--shadow)}
+.sug div{padding:.55rem .8rem;cursor:pointer;font-size:.88rem}
+.sug div:active{background:var(--pri-l);color:var(--pri)}
+
+/* BARCODE */
+.bc-row{display:flex;gap:.5rem;align-items:center;margin-bottom:.5rem}
+.bc-row input{flex:1;padding:.7rem;border:1.5px solid var(--border);border-radius:8px;font-size:.9rem}
+.bc-scan{border:1.5px solid var(--border);background:#fff;border-radius:8px;padding:.65rem .85rem;cursor:pointer;font-size:.95rem;color:var(--gray)}
+.bc-del{border:1.5px solid #fecaca;background:#fff;border-radius:8px;padding:.65rem .85rem;cursor:pointer;font-size:.85rem;color:var(--danger)}
+
+/* RADIO */
+.rbox{background:#f8fafc;border-radius:10px;padding:.75rem;margin-bottom:.75rem}
+.rbox p{font-weight:600;font-size:.82rem;margin-bottom:.45rem}
+.rrow{display:flex;gap:.5rem;flex-wrap:wrap}
+.ropt{display:flex;align-items:center;gap:.35rem;padding:.4rem .75rem;border:1.5px solid var(--border);border-radius:20px;background:#fff;cursor:pointer;font-size:.82rem}
+.ropt input{accent-color:var(--pri)}
+
+/* QTY */
+.qty-big{font-size:2.2rem!important;text-align:center!important;font-weight:700!important;padding:.9rem!important;border:2px solid var(--pri)!important;border-radius:12px!important;background:var(--pri-l)!important}
+
+/* CODE DISPLAY */
+.cdisp{background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:.65rem;font-family:monospace;font-size:.85rem;word-break:break-all;margin:.4rem 0}
+
+/* FAB MENU */
+.fab-overlay{position:fixed;inset:0;z-index:198;background:rgba(0,0,0,.25)}
+.fab-menu{position:fixed;bottom:78px;right:14px;display:flex;flex-direction:column;gap:.5rem;align-items:flex-end;z-index:199}
+.fab-action{display:flex;align-items:center;gap:.6rem;padding:.62rem .9rem .62rem .75rem;border:none;border-radius:22px;background:#fff;box-shadow:0 3px 12px rgba(0,0,0,.18);font-weight:700;font-size:.82rem;cursor:pointer;color:#1e293b;white-space:nowrap}
+.fab-action:active{opacity:.8}
+.fab-action .fa-icon{font-size:1.05rem;width:22px;text-align:center}
+.fab-action-pick{background:var(--pri);color:#fff}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(16px);background:#1e293b;color:#fff;padding:.65rem 1.1rem;border-radius:24px;font-weight:700;font-size:.82rem;z-index:9000;opacity:0;transition:all .3s;pointer-events:none;max-width:92vw;text-align:center;white-space:pre-wrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* LOADER */
+#loader{position:fixed;inset:0;background:rgba(255,255,255,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.9rem;z-index:9999;font-weight:700;color:var(--pri);font-size:.95rem}
+.spin{width:38px;height:38px;border:4px solid var(--pri-l);border-top-color:var(--pri);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* Alertes peremption - couche additionnelle */
+.expiry-badge{display:inline-flex;align-items:center;padding:.15rem .45rem;border-radius:999px;font-size:.68rem;font-weight:700}
+.expired{background:#fee2e2;color:#991b1b}
+.expiry-orange{background:#ffedd5;color:#9a3412}
+.expiry-yellow{background:#fef9c3;color:#854d0e}
+.dashboard-metric{font-size:.72rem;color:var(--gray)}
+
+/* INVENTAIRE SYNCHRONISE */
+.sync-step{padding:.85rem}.sync-hero{background:#fff;border-radius:14px;padding:1rem;margin-bottom:.8rem;box-shadow:var(--shadow);border-left:5px solid var(--pri)}.sync-hero h2{font-size:1.05rem;margin-bottom:.25rem}.sync-hero p{font-size:.82rem;color:var(--gray);line-height:1.35}.sync-setup-card{background:#fff;border-radius:14px;box-shadow:var(--shadow)}
+.sync-workbar{position:sticky;top:56px;z-index:20;display:grid;grid-template-columns:1fr 1fr;gap:.55rem;background:#f1f5f9;padding:.6rem .75rem;border-bottom:1px solid var(--border)}.sync-workbar button,.sync-scan-row button{border:0;border-radius:10px;padding:.68rem .75rem;font-weight:900}.sync-back{background:#fff;color:#1e293b}.sync-refresh{background:var(--pri);color:#fff}
+.sync-panel{padding:.75rem}.sync-grid{display:grid;grid-template-columns:1fr;gap:.55rem;margin-bottom:.65rem}.sync-inv-card{width:100%;border:1.5px solid var(--border);background:#fff;border-radius:10px;padding:.7rem;text-align:left;font-weight:800;color:#1e293b;box-shadow:var(--shadow);display:flex;justify-content:space-between;gap:.5rem;align-items:center}.sync-inv-card.active{border-color:var(--pri);background:var(--pri-l);color:var(--pri)}.sync-inv-card small{font-size:.72rem;color:var(--gray);font-weight:600}
+.sync-filter-card{position:sticky;top:104px;z-index:15;background:#fff;border:1px solid var(--border);border-radius:14px;padding:.7rem;margin-bottom:.75rem;box-shadow:var(--shadow)}.sync-filter-card select{width:100%;padding:.65rem;border:1.5px solid var(--border);border-radius:9px;margin-bottom:.45rem;background:#fff;font-weight:800}.sync-scan-row{display:grid;grid-template-columns:1.5fr 1fr;gap:.45rem;margin:.5rem 0}.sync-scan-row button:first-child{background:#111827;color:#fff}.sync-scan-row button:last-child{background:#e2e8f0;color:#1e293b}.sync-summary{font-size:.78rem;color:var(--gray);font-weight:800;margin:.45rem 0 0}
+.sync-line{background:#fff;border-radius:14px;padding:.8rem;margin-bottom:.7rem;box-shadow:var(--shadow);border-left:6px solid #f59e0b}.sync-line.done-self{border-left-color:#10b981;background:#f0fdf4}.sync-line.seen-other{border-left-color:var(--danger);background:#fff1f2}.sync-line-head{display:flex;justify-content:space-between;gap:.6rem;align-items:flex-start}.sync-line h4{font-size:.95rem;margin-bottom:.24rem;line-height:1.22}.sync-line .meta{font-size:.76rem;color:var(--gray);line-height:1.35}.sync-status{background:#e0f2fe;color:#0369a1;border-radius:999px;padding:.2rem .5rem;font-size:.68rem;font-weight:900;white-space:nowrap}.sync-status.done{background:#dcfce7;color:#166534}.sync-status.other{background:#fee2e2;color:#991b1b}.sync-alert{background:#fee2e2;color:#991b1b;border-radius:8px;padding:.45rem .55rem;font-size:.78rem;font-weight:900;margin:.55rem 0}.sync-row{display:grid;grid-template-columns:1fr 1fr auto;gap:.5rem;margin-top:.7rem}.sync-row input{min-width:0;padding:.75rem;border:1.5px solid var(--border);border-radius:10px;font-size:1.05rem;font-weight:800}.sync-row button,.sync-actions button,.sync-lots button{border:none;border-radius:10px;padding:.68rem .72rem;font-weight:900;background:var(--pri);color:#fff}.sync-actions{display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin-top:.6rem}.sync-actions button{background:#fff;color:#1e293b;border:1.5px solid var(--border)}.sync-actions .code-btn{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}.sync-actions .lot-btn{background:#f0fdf4;color:#166534;border-color:#bbf7d0}.sync-lots{display:flex;flex-direction:column;gap:.4rem;margin-top:.55rem}.sync-lots button{text-align:left;background:#f0fdf4;color:#166534;border:1.5px solid #bbf7d0}.sync-empty{text-align:center;color:var(--gray);padding:1rem;font-size:.86rem}
+.client-tabs{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;padding:.75rem;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:56px;z-index:10}.client-tabs button{border:1.5px solid var(--border);background:#fff;border-radius:10px;padding:.7rem;font-weight:900;color:#1e293b}.client-tabs button.active{background:var(--pri);border-color:var(--pri);color:#fff}.client-summary{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;padding:.75rem}.client-metric{background:#fff;border:1px solid var(--border);border-radius:10px;padding:.75rem;box-shadow:var(--shadow)}.client-metric small{display:block;color:var(--gray);font-size:.72rem;font-weight:800;margin-bottom:.25rem}.client-metric strong{font-size:1rem;color:#111827}.client-actions{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;padding:0 .75rem .75rem}.client-actions button{border:0;border-radius:10px;padding:.75rem;font-weight:900}.client-actions .cmd{background:#dcfce7;color:#166534}.client-actions .pay{background:#fee2e2;color:#991b1b}.client-actions .adj{background:#eff6ff;color:#1d4ed8}.client-ledger{padding:.75rem}.client-row{background:#fff;border-left:5px solid var(--pri);border-radius:10px;padding:.75rem;margin-bottom:.6rem;box-shadow:var(--shadow)}.client-row.commande{border-left-color:#10b981}.client-row.versement{border-left-color:#ef4444}.client-row.ajustement{border-left-color:#2563eb}.client-row h4{font-size:.92rem;margin-bottom:.25rem}.client-row .meta{font-size:.76rem;color:var(--gray);line-height:1.35}.client-row .amt{font-weight:900;margin-top:.4rem}.client-card-head{display:flex;justify-content:space-between;gap:.7rem;align-items:flex-start}.client-card-head button{border:1px solid var(--border);background:#f8fafc;border-radius:8px;padding:.4rem .55rem;font-weight:800;color:#334155}.client-stock-value{color:#166534}.client-balance{color:#991b1b}
+.invoice-head{background:#fff;padding:1rem .75rem;text-align:center;border-bottom:1px solid var(--border)}.invoice-head h2{font-size:1rem;letter-spacing:0;font-weight:900}.invoice-head p{font-size:.78rem;color:var(--gray);margin-top:.25rem}.invoice-tools{background:#fff;padding:.75rem;border-bottom:1px solid var(--border)}.invoice-grid{display:grid;grid-template-columns:1fr 1fr;gap:.55rem}.invoice-lines{padding:.75rem}.invoice-line{background:#fff;border:1px solid var(--border);border-radius:10px;padding:.65rem;margin-bottom:.5rem;box-shadow:var(--shadow)}.invoice-line h4{font-size:.86rem;margin-bottom:.25rem}.invoice-line .meta{font-size:.74rem;color:var(--gray)}.invoice-line .line-total{font-weight:900;color:#111827;margin-top:.35rem}.invoice-balance{background:#fff;border-top:1px solid var(--border);padding:.75rem;position:sticky;bottom:0;box-shadow:0 -2px 10px rgba(0,0,0,.08)}.invoice-balance-row{display:flex;justify-content:space-between;gap:.75rem;font-size:.84rem;margin:.25rem 0}.invoice-balance-row strong{font-size:.95rem}.invoice-actions{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.65rem}.invoice-actions button{border:0;border-radius:10px;padding:.75rem;font-weight:900}.invoice-actions .save{background:var(--pri);color:#fff}.invoice-actions .clear{background:#e2e8f0;color:#1e293b}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <button id="btn-back" class="hidden">&#8592;</button>
+  <h1>Pharma Inventaire</h1>
+  <button id="btn-sync" title="Synchroniser">&#8635;</button>
+</header>
+
+<div class="toast" id="toast"></div>
+<div id="loader" class="hidden"><div class="spin"></div><span>Chargement...</span></div>
+
+<!-- ACCUEIL -->
+<section id="page-accueil" class="view active">
+  <div class="dash">
+    <button class="card pri" onclick="app.go('nouvel-inventaire')"><span class="i">&#9654;</span><span>Démarrer inventaire</span></button>
+    <button class="card pri-l" onclick="app.go('inventaire')"><span class="i">&#128203;</span><span>Continuer inventaire</span></button>
+    <button class="card" onclick="app.go('historique-inventaires')"><span class="i">&#128336;</span><span>Historique inventaires</span></button>
+    <button class="card sec" onclick="app.go('scan')"><span class="i">&#9641;</span><span>Scanner produit</span></button>
+    <button class="card" onclick="app.go('liste-medicaments')"><span class="i">&#128138;</span><span>Liste médicaments</span></button>
+    <button class="card" onclick="app.go('import-excel')"><span class="i">&#128190;</span><span>Importer Excel</span></button>
+    <button class="card" onclick="app.exportInventory()"><span class="i">&#128196;</span><span>Exporter inventaire</span></button>
+    <button class="card pri-l" onclick="window.serverInventory&&serverInventory.open?serverInventory.open():app.go('inventaire-sync')"><span class="i">&#8644;</span><span>Inventaire synchronise</span></button>
+    <button class="card pri-l" onclick="window.serverInventory&&serverInventory.openBl?serverInventory.openBl():app.go('inventaire-sync')"><span class="i">&#128203;</span><span>Produits d'un BL</span></button>
+    <button class="card" onclick="app.scanServerConfig()"><span class="i">&#9638;</span><span>Actualiser serveur local</span></button>
+    <button class="card sec" onclick="app.go('clients')"><span class="i">&#128101;</span><span>CLIENT / ESPC</span></button>
+    <button class="card" onclick="app.go('facturation')"><span class="i">&#128179;</span><span>Facturation</span></button>
+  </div>
+</section>
+
+<!-- HISTORIQUE INVENTAIRES -->
+<section id="page-historique-inventaires" class="view hidden">
+  <div class="ctrl">
+    <div class="sbar">
+      <input id="history-inv-search" placeholder="Rechercher un inventaire..." oninput="app.renderInventoryHistory(this.value)">
+      <button onclick="app.renderInventoryHistory(document.getElementById('history-inv-search').value||'')">Actualiser</button>
+    </div>
+  </div>
+  <div id="history-inv-list" class="lst"></div>
+</section>
+
+<!-- FACTURATION CLIENT -->
+<section id="page-facturation" class="view hidden">
+  <div class="invoice-head">
+    <h2>DISTRICT SANITAIRE DE TOUMODI</h2>
+    <p>Facture client ESPC</p>
+  </div>
+  <div class="invoice-tools">
+    <div class="fg"><label>Client</label><select id="invoice-client" onchange="app.invoiceSetClient(this.value)"></select></div>
+    <div class="invoice-grid">
+      <div class="fg"><label>Date</label><input type="date" id="invoice-date"></div>
+      <div class="fg"><label>N facture</label><input id="invoice-number" placeholder="Auto"></div>
+    </div>
+    <div class="fg"><label>Famille des medicaments factures</label><select id="invoice-family" onchange="app.invoiceSetFamily(this.value)"></select></div>
+    <div class="sbar">
+      <input id="invoice-search" placeholder="Rechercher medicament a facturer..." oninput="app.invoiceSearchMeds(this.value)">
+      <button onclick="app.invoiceSearchMeds(document.getElementById('invoice-search').value||'')">OK</button>
+    </div>
+  </div>
+  <div id="invoice-med-results" class="client-ledger"></div>
+  <div id="invoice-lines" class="invoice-lines"></div>
+  <div class="invoice-balance">
+    <div class="invoice-balance-row"><span>Ancienne balance</span><strong id="invoice-old-balance">0 FCFA</strong></div>
+    <div class="invoice-balance-row"><span>Montant facture</span><strong id="invoice-total">0 FCFA</strong></div>
+    <div class="invoice-balance-row"><span>Nouvelle balance</span><strong id="invoice-new-balance">0 FCFA</strong></div>
+    <div class="invoice-actions">
+      <button class="clear" onclick="app.invoiceClear()">Effacer</button>
+      <button class="save" onclick="app.invoiceSave()">Enregistrer facture</button>
+    </div>
+  </div>
+</section>
+
+<!-- CLIENTS / ESPC -->
+<section id="page-clients" class="view hidden">
+  <div class="client-tabs">
+    <button id="tab-client-compta" class="active" onclick="app.showClientTab('compta')">Comptabilite</button>
+    <button id="tab-client-stock" onclick="app.showClientTab('stock')">Valeur stock</button>
+  </div>
+  <div class="ctrl">
+    <div class="fg"><label>ESPC / client</label><select id="client-select" onchange="app.selectClient(this.value)"></select></div>
+    <button class="btn b-pri" onclick="app.openClientModal()">+ Nouveau client</button>
+  </div>
+  <div id="client-compta-panel">
+    <div class="client-summary">
+      <div class="client-metric"><small>Valeur du stock</small><strong id="client-stock-value">0 FCFA</strong></div>
+      <div class="client-metric"><small>Solde comptable</small><strong id="client-balance">0 FCFA</strong></div>
+      <div class="client-metric"><small>Total commandes</small><strong id="client-orders-total">0 FCFA</strong></div>
+      <div class="client-metric"><small>Total versements</small><strong id="client-payments-total">0 FCFA</strong></div>
+    </div>
+    <div class="client-actions">
+      <button class="cmd" onclick="app.openClientMovement('commande')">+ Commande</button>
+      <button class="pay" onclick="app.openClientMovement('versement')">+ Versement</button>
+      <button class="adj" onclick="app.openClientMovement('ajustement')">Ajustement stock</button>
+      <button onclick="app.refreshClients()">Actualiser</button>
+    </div>
+    <div id="client-ledger" class="client-ledger"></div>
+  </div>
+  <div id="client-stock-panel" class="hidden">
+    <div id="client-stock-list" class="client-ledger"></div>
+  </div>
+</section>
+
+<div id="modal-client" class="modal hidden">
+  <div class="mbox">
+    <div class="mhd">
+      <h3>Nouveau client ESPC</h3>
+      <button class="mclose" onclick="app.closeModal('modal-client')">&#x2715;</button>
+    </div>
+    <div class="mbody">
+      <div class="fg"><label>Nom du client / ESPC *</label><input id="client-name" placeholder="Ex: ESPC Toumodi"></div>
+      <div class="fg"><label>Code client</label><input id="client-code" placeholder="Ex: ESPC001"></div>
+      <div class="fg"><label>Valeur initiale du stock</label><input type="number" id="client-initial-stock" min="0" step="0.01" inputmode="decimal" value="0"></div>
+    </div>
+    <div class="mfooter">
+      <button class="btn b-out" onclick="app.closeModal('modal-client')">Annuler</button>
+      <button class="btn b-pri" onclick="app.saveClient()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-client-movement" class="modal hidden">
+  <div class="mbox">
+    <div class="mhd">
+      <h3 id="client-movement-title">Mouvement client</h3>
+      <button class="mclose" onclick="app.closeModal('modal-client-movement')">&#x2715;</button>
+    </div>
+    <div class="mbody">
+      <div class="fg"><label>Date</label><input type="date" id="client-movement-date"></div>
+      <div class="fg"><label>Montant *</label><input type="number" id="client-movement-amount" step="0.01" inputmode="decimal" placeholder="0"></div>
+      <div class="fg"><label>Reference</label><input id="client-movement-ref" placeholder="N commande, recu, note"></div>
+      <div class="fg"><label>Observation</label><input id="client-movement-note" placeholder="Observation"></div>
+      <div id="client-adjustment-help" style="font-size:.78rem;color:var(--gray);line-height:1.35"></div>
+    </div>
+    <div class="mfooter">
+      <button class="btn b-out" onclick="app.closeModal('modal-client-movement')">Annuler</button>
+      <button class="btn b-pri" onclick="app.saveClientMovement()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+<!-- INVENTAIRE SYNCHRONISE SERVEUR -->
+<section id="page-inventaire-sync" class="view hidden">
+  <div id="sync-step-setup" class="sync-step">
+    <div class="sync-hero">
+      <h2>Inventaire collaboratif</h2>
+      <p>Connectez ce telephone au serveur local, puis choisissez la fiche a inventorier.</p>
+    </div>
+    <div class="ctrl sync-setup-card">
+      <div class="fg"><label>Adresse serveur local</label><input id="sync-server-url" placeholder="http://192.168.1.125:3780"></div>
+      <div class="fg"><label>Detenteur du telephone</label><input id="sync-holder" placeholder="Nom de l'agent"></div>
+      <button class="btn b-out" onclick="app.scanServerConfig()">Scanner QR serveur</button>
+      <button class="btn b-pri" onclick="serverInventory.loadInventories()">Charger serveur et ouvrir</button>
+      <button class="btn b-sec" onclick="serverInventory.loadBlInvoices()">Rappeler produits d'un BL</button>
+      <button class="btn b-sec" onclick="serverInventory.downloadBase()">Base hors serveur</button>
+      <button class="btn b-pri" onclick="app.syncGoogleDrive()">Synchroniser avec Google Sheets (Internet)</button>
+      <div id="sync-setup-status" class="sync-summary">Renseignez le serveur et le detenteur du telephone.</div>
+    </div>
+  </div>
+
+  <div id="sync-step-work" class="sync-work hidden">
+    <div class="sync-workbar">
+      <button class="sync-back" onclick="serverInventory.showSetup()">Serveur</button>
+      <button class="sync-refresh" onclick="serverInventory.loadInventories()">Actualiser</button>
+    </div>
+    <div class="sync-panel">
+      <div id="sync-inventory-list" class="sync-grid"></div>
+      <div class="sync-filter-card">
+        <select id="sync-fiche" onchange="serverInventory.setFiche(this.value)">
+          <option value="">Toutes les fiches</option>
+        </select>
+        <select id="sync-family" onchange="serverInventory.setFamily(this.value)">
+          <option value="">Toutes les familles</option>
+        </select>
+        <div class="sbar">
+          <input id="sync-search" placeholder="Rechercher DCI, lot ou CIP..." oninput="serverInventory.setSearch(this.value)">
+          <button onclick="serverInventory.searchBarcode()" title="Scanner ou saisir code">Scan</button>
+        </div>
+        <div class="sync-scan-row">
+          <button onclick="serverInventory.searchBarcode()">Scanner / saisir code-barres</button>
+          <button onclick="serverInventory.clearFilters()">Voir tout</button>
+        </div>
+        <div id="sync-summary" class="sync-summary">Chargez le serveur pour afficher les lignes.</div>
+      </div>
+      <div id="sync-lines" class="lst"></div>
+    </div>
+  </div>
+</section>
+
+<!-- NOUVEL INVENTAIRE -->
+<section id="page-nouvel-inventaire" class="view hidden">
+  <div class="fbox">
+    <h2>Nouvel inventaire</h2>
+    <form id="form-inv">
+      <div class="fg"><label>Nom de l'inventaire *</label><input id="inv-nom" required placeholder="Ex: Inventaire Mai 2025"></div>
+      <div class="fg"><label>Structure</label><select id="inv-structure"></select></div>
+      <div class="fg"><label>Dépôt</label><select id="inv-depot"></select></div>
+      <div class="fg"><label>Date</label><input type="date" id="inv-date"></div>
+      <div class="fg"><label>Agent</label><input id="inv-agent" placeholder="Nom de l'agent"></div>
+      <button type="submit" class="btn b-pri">Démarrer</button>
+    </form>
+  </div>
+</section>
+
+<!-- INVENTAIRE -->
+<section id="page-inventaire" class="view hidden">
+  <div class="ctrl">
+    <select id="filter-famille-inv" onchange="app.setFamilleInv(this.value)">
+      <option value="">— Toutes les familles —</option>
+    </select>
+    <div class="sbar" style="margin-top:.4rem">
+      <input id="search-inv" placeholder="Rechercher dans les inventoriés..." oninput="app.renderInventoried(this.value)">
+      <button onclick="app.go('scan')" title="Scanner">&#9641;</button>
+    </div>
+  </div>
+  <div id="inv-summary" style="padding:.5rem .75rem;font-size:.78rem;color:var(--gray);display:flex;justify-content:space-between;align-items:center">
+    <span id="inv-count">0 produit(s) inventorié(s)</span>
+    <span id="inv-total-qty" style="font-weight:700;color:var(--sec)"></span>
+  </div>
+  <div id="inv-list" class="lst"></div>
+  <!-- FAB multi-action -->
+  <div id="fab-menu" class="fab-menu hidden">
+    <button class="fab-action" onclick="app.fabAction('create')">
+      <span class="fa-icon">&#9998;</span><span>Créer produit</span>
+    </button>
+    <button class="fab-action" onclick="app.fabAction('lot')">
+      <span class="fa-icon">&#128230;</span><span>Ajouter lot</span>
+    </button>
+    <button class="fab-action" onclick="app.fabAction('barcode')">
+      <span class="fa-icon">&#9641;</span><span>Ajouter code-barre</span>
+    </button>
+    <button class="fab-action fab-action-pick" onclick="app.fabAction('pick')">
+      <span class="fa-icon">&#128203;</span><span>Inventorier produit</span>
+    </button>
+  </div>
+  <div id="fab-overlay" class="fab-overlay hidden" onclick="app.closeFabMenu()"></div>
+  <button class="fab" id="fab-main" onclick="app.toggleFabMenu()">
+    <span class="fab-c" id="fab-icon">+</span><span id="fab-label">Actions</span>
+  </button>
+</section>
+
+<!-- IMPORT EXCEL -->
+<section id="page-import-excel" class="view hidden">
+  <div class="fbox">
+    <h2>Import Excel</h2>
+    <div class="fg"><label>Fichier .xlsx</label><input type="file" id="file-import" accept=".xlsx,.xls"></div>
+    <button class="btn b-pri" onclick="app.importExcel()">Lancer l'import</button>
+    <button class="btn b-out mt1" onclick="app.downloadTemplate()">Télécharger le modèle</button>
+  </div>
+</section>
+
+<!-- SCAN -->
+<section id="page-scan" class="view hidden">
+  <div class="scan-box">
+    <video id="camera-preview" autoplay playsinline muted></video>
+    <div class="scan-ovl"><div class="scan-frm"></div></div>
+  </div>
+  <div id="manual-wrap">
+    <p style="font-size:.85rem;color:var(--gray);margin-bottom:.4rem">Saisie manuelle :</p>
+    <div class="sbar">
+      <input id="manual-code" placeholder="Code-barre ou QR Code" inputmode="none">
+      <button onclick="app.processCode(document.getElementById('manual-code').value.trim())">OK</button>
+    </div>
+  </div>
+  <div id="scan-result"></div>
+</section>
+
+<!-- LISTE MÉDICAMENTS -->
+<section id="page-liste-medicaments" class="view hidden">
+  <div class="ctrl">
+    <div class="sbar" style="margin-bottom:0">
+      <input id="search-med" placeholder="Rechercher un médicament..." oninput="app.searchMedsListe(this.value)">
+    </div>
+  </div>
+  <div id="med-list" class="lst"></div>
+</section>
+
+<!-- ══════════════ MODAL : CRÉER PRODUIT ══════════════ -->
+<div id="modal-create" class="modal hidden">
+  <div class="mbox">
+    <div class="mhd">
+      <h3>+ Nouveau produit</h3>
+      <button class="mclose" onclick="app.closeModal('modal-create')">&#x2715;</button>
+    </div>
+    <!-- Indicateur étapes -->
+    <div class="steps">
+      <div class="sdot active" id="si1"><span class="snum">1</span><span class="slbl">Famille&amp;DCI</span></div>
+      <div class="sline"></div>
+      <div class="sdot" id="si2"><span class="snum">2</span><span class="slbl">Lot</span></div>
+      <div class="sline"></div>
+      <div class="sdot" id="si3"><span class="snum">3</span><span class="slbl">Codes-barres</span></div>
+    </div>
+    <!-- Étape 1 -->
+    <div id="sp1" class="spane active">
+      <div class="sl">Famille thérapeutique</div>
+      <div class="fg">
+        <label>Famille *</label>
+        <div class="sw">
+          <input id="qc-fam" placeholder="Ex: ANALGESIQUES" autocomplete="off" oninput="app.suggestFam(this.value)">
+          <div id="fam-sug" class="sug hidden"></div>
+        </div>
+      </div>
+      <div class="sl mt1">Médicament (DCI)</div>
+      <div class="fg"><label>DCI *</label><input id="qc-dci" placeholder="Ex: PARACETAMOL 500MG"></div>
+      <div class="fg"><label>Désignation / Nom commercial</label><input id="qc-des" placeholder="Ex: DOLIPRANE"></div>
+      <div class="row2">
+        <div class="fg"><label>Unité</label>
+          <select id="qc-unit">
+            <option>BOITE</option><option>AMPOULE</option><option>COMPRIME</option><option>PLAQUETTE</option>
+            <option>UNITE</option><option>CARTON</option><option>KIT</option><option>FLACON</option>
+          </select>
+        </div>
+        <div class="fg"><label>Code interne</label><input id="qc-code" placeholder="MED001"></div>
+      </div>
+      <div class="row2">
+        <div class="fg"><label>Prix vente</label><input type="number" id="qc-pv" value="0" min="0" inputmode="numeric"></div>
+        <div class="fg"><label>Prix achat</label><input type="number" id="qc-pa" value="0" min="0" inputmode="numeric"></div>
+      </div>
+      <div class="fg"><label>Catégorie</label>
+        <select id="qc-cat">
+          <option value="recouvrable">Recouvrable</option>
+          <option value="gratuit">Gratuit</option>
+          <option value="subventionne">Subventionné</option>
+        </select>
+      </div>
+      <div class="sact">
+        <button class="btn b-out" onclick="app.closeModal('modal-create')">Annuler</button>
+        <button class="btn b-pri" onclick="app.step(2)">Suivant &#8594;</button>
+      </div>
+    </div>
+    <!-- Étape 2 -->
+    <div id="sp2" class="spane">
+      <div class="sl">Lot (optionnel)</div>
+      <div class="trow">
+        <label class="tlbl">
+          <input type="checkbox" id="has-lot" onchange="app.toggleLot()">
+          <span class="tsw"></span>
+          Rattacher un lot à ce produit
+        </label>
+      </div>
+      <div id="lot-box" class="lot-box hidden">
+        <div class="fg"><label>Numéro de lot *</label><input id="qc-lot" placeholder="Ex: LOT2025001"></div>
+        <div class="row2">
+          <div class="fg"><label>Date péremption</label><input type="date" id="qc-exp"></div>
+          <div class="fg"><label>Stock théorique</label><input type="number" id="qc-stk" value="0" min="0" inputmode="numeric"></div>
+        </div>
+      </div>
+      <div class="sact">
+        <button class="btn b-out" onclick="app.step(1)">&#8592; Retour</button>
+        <button class="btn b-pri" onclick="app.step(3)">Suivant &#8594;</button>
+      </div>
+    </div>
+    <!-- Étape 3 -->
+    <div id="sp3" class="spane">
+      <div class="sl">Codes-barres / QR Codes</div>
+      <div class="rbox">
+        <p>Rattacher les codes à :</p>
+        <div class="rrow">
+          <label class="ropt"><input type="radio" name="bc-tgt" value="dci" checked><span>La DCI</span></label>
+          <label class="ropt" id="ropt-lot"><input type="radio" name="bc-tgt" value="lot"><span>Au lot</span></label>
+        </div>
+      </div>
+      <div id="bc-list">
+        <div class="bc-row">
+          <input type="text" class="bc-inp" placeholder="Code-barre ou QR Code" inputmode="none">
+          <button class="bc-scan" onclick="app.scanForField(0)" title="Scanner">&#9641;</button>
+        </div>
+      </div>
+      <button class="btn b-out mt1" onclick="app.addBcField()">+ Ajouter un code</button>
+      <div class="sact">
+        <button class="btn b-out" onclick="app.step(2)">&#8592; Retour</button>
+        <button class="btn b-suc" onclick="app.createProduct()">&#10003; Créer le produit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL : CODE INCONNU ══════════════ -->
+<div id="modal-unknown" class="modal hidden">
+  <div class="mbox">
+    <div class="mhd">
+      <h3>Code inconnu</h3>
+      <button class="mclose" onclick="app.closeModal('modal-unknown')">&#x2715;</button>
+    </div>
+    <div class="mbody">
+      <p style="font-size:.82rem;color:var(--gray)">Code scanné :</p>
+      <div class="cdisp" id="unk-code"></div>
+      <div class="fg mt1"><label>Associer à un médicament existant :</label>
+        <input id="assoc-q" placeholder="Rechercher..." oninput="app.searchAssoc(this.value)">
+      </div>
+      <div id="assoc-res" class="lst" style="max-height:160px;overflow-y:auto;padding:.4rem 0"></div>
+    </div>
+    <div class="mfooter">
+      <button class="btn b-out" onclick="app.closeModal('modal-unknown')">Ignorer</button>
+      <button class="btn b-pri" onclick="app.closeModal('modal-unknown');app.openCreate()">+ Créer produit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL : SYNC ══════════════ -->
+<div id="modal-sync" class="modal hidden">
+  <div class="mbox">
+    <div class="mhd">
+      <h3>Synchronisation manuelle</h3>
+      <button class="mclose" onclick="app.closeModal('modal-sync')">&#x2715;</button>
+    </div>
+    <div class="mbody">
+      <div style="background:#f1f5f9;border-radius:8px;padding:.75rem;margin-bottom:.9rem">
+        <p style="font-size:.75rem;font-weight:700;color:#64748b;margin-bottom:.3rem">CONNEXION</p>
+        <p style="font-size:.78rem;color:#1e293b;word-break:break-all" id="sync-url-display"></p>
+        <div id="sync-status" style="margin-top:.5rem;font-size:.78rem"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        <div style="background:#eff6ff;border-radius:8px;padding:.75rem">
+          <p style="font-weight:700;font-size:.85rem;color:#2563eb;margin-bottom:.25rem">Envoyer au serveur local</p>
+          <p style="font-size:.78rem;color:#64748b">Envoie les saisies faites hors-ligne quand le telephone revient sur le Wi-Fi du serveur.</p>
+        </div>
+        <div style="background:#f0fdf4;border-radius:8px;padding:.75rem">
+          <p style="font-weight:700;font-size:.85rem;color:#10b981;margin-bottom:.25rem">Preparer le telephone</p>
+          <p style="font-size:.78rem;color:#64748b">Télécharge les familles, DCI, lots et codes du serveur via son Wi-Fi.</p>
+        </div>
+        <div style="background:#fff7ed;border-radius:8px;padding:.75rem">
+          <p style="font-weight:700;font-size:.85rem;color:#c2410c;margin-bottom:.25rem">Google Sheets · Internet</p>
+          <p style="font-size:.78rem;color:#64748b">Envoie les saisies mobiles compatibles et récupère les mises à jour publiées dans Google Sheets. Fonctionne aussi en 4G.</p>
+        </div>
+      </div>
+    </div>
+    <div class="mfooter" style="flex-wrap:wrap;gap:.5rem">
+      <button class="btn b-out" onclick="app.closeModal('modal-sync')" style="flex:0 0 auto;width:auto;padding:.7rem 1rem">Fermer</button>
+      <button class="btn b-sec" onclick="app.syncPull()" style="flex:1">&#8595; Recevoir du serveur local</button>
+      <button class="btn b-pri" onclick="app.syncPush()" style="flex:1">&#8593; Envoyer au serveur local</button>
+      <button class="btn b-sec" onclick="app.syncGoogleDrive()" style="flex:1 1 100%">Synchroniser avec Google Sheets</button>
+      <button id="google-auth-signout" type="button" class="btn b-out hidden" onclick="app.signOutGoogle()">Se déconnecter</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-google-auth" class="modal hidden">
+  <div class="mbox">
+    <div class="mhd">
+      <h3>Connexion PharmaStock</h3>
+      <button type="button" class="mclose" onclick="app.closeModal('modal-google-auth')" aria-label="Fermer">&#x2715;</button>
+    </div>
+    <form id="google-auth-form" class="mbody">
+      <div class="fg"><label for="google-auth-email">E-mail</label>
+        <input id="google-auth-email" type="email" autocomplete="username" required></div>
+      <div class="fg"><label for="google-auth-password">Mot de passe PharmaStock</label>
+        <input id="google-auth-password" type="password" autocomplete="current-password" required></div>
+      <p id="google-auth-error" role="status" aria-live="polite"></p>
+      <button class="btn b-pri" type="submit">Se connecter et synchroniser</button>
+    </form>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL : MODIFIER MÉDICAMENT ══════════════ -->
+<div id="modal-edit-med" class="modal hidden">
+  <div class="mbox">
+    <div class="mhd">
+      <h3 id="edit-med-title">Modifier médicament</h3>
+      <button class="mclose" onclick="app.closeModal('modal-edit-med')">&#x2715;</button>
+    </div>
+    <div class="mbody">
+      <div class="fg"><label>DCI *</label><input id="edit-med-dci" placeholder="Ex: PARACETAMOL 500MG"></div>
+      <div class="fg"><label>Désignation / Nom commercial</label><input id="edit-med-des" placeholder="Ex: DOLIPRANE"></div>
+      <div class="fg"><label>Prix d'achat unitaire</label><input type="number" id="edit-med-pa" min="0" inputmode="numeric"></div>
+      <div class="fg"><label>Unité de comptage</label>
+        <select id="edit-med-unit">
+          <option>BOITE</option><option>AMPOULE</option><option>COMPRIME</option><option>PLAQUETTE</option>
+          <option>UNITE</option><option>CARTON</option><option>KIT</option><option>FLACON</option>
+        </select>
+      </div>
+    </div>
+    <div class="mfooter">
+      <button class="btn b-out" onclick="app.closeModal('modal-edit-med')">Annuler</button>
+      <button class="btn b-pri" onclick="app.saveEditMed()">&#10003; Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL : AJOUTER LOT ══════════════ -->
+<div id="modal-add-lot" class="modal hidden">
+  <div class="mbox">
+    <div class="mhd">
+      <h3>&#128230; Ajouter un lot</h3>
+      <button class="mclose" onclick="app.closeModal('modal-add-lot')">&#x2715;</button>
+    </div>
+    <div style="padding:.6rem .75rem;border-bottom:1px solid var(--border)">
+      <input id="lot-med-search" style="width:100%;padding:.65rem;border:1.5px solid var(--border);border-radius:8px;font-size:.95rem"
+        placeholder="Rechercher le médicament..." oninput="app.searchLotMed(this.value)" autocomplete="off">
+    </div>
+    <div id="lot-med-list" style="max-height:28vh;overflow-y:auto;padding:.5rem .75rem;border-bottom:1px solid var(--border)"></div>
+    <div class="mbody" id="lot-form-area" style="display:none">
+      <div id="lot-med-selected" style="background:var(--pri-l);border-radius:8px;padding:.55rem .75rem;font-size:.82rem;color:var(--pri);font-weight:700;margin-bottom:.85rem"></div>
+      <div class="fg"><label>Numéro de lot *</label><input id="al-num" placeholder="Ex: LOT2025001"></div>
+      <div class="row2">
+        <div class="fg"><label>Date péremption</label><input type="date" id="al-exp"></div>
+        <div class="fg"><label>Stock théorique</label><input type="number" id="al-stk" value="0" min="0" inputmode="numeric"></div>
+      </div>
+    </div>
+    <div class="mfooter">
+      <button class="btn b-out" onclick="app.closeModal('modal-add-lot')">Annuler</button>
+      <button class="btn b-pri" id="al-save-btn" onclick="app.saveLot()" style="display:none">&#10003; Enregistrer le lot</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL : AJOUTER CODE-BARRE ══════════════ -->
+<div id="modal-add-barcode" class="modal hidden">
+  <div class="mbox">
+    <div class="mhd">
+      <h3>&#9641; Ajouter code-barre</h3>
+      <button class="mclose" onclick="app.closeModal('modal-add-barcode')">&#x2715;</button>
+    </div>
+    <div style="padding:.6rem .75rem;border-bottom:1px solid var(--border)">
+      <input id="bc-med-search" style="width:100%;padding:.65rem;border:1.5px solid var(--border);border-radius:8px;font-size:.95rem"
+        placeholder="Rechercher le médicament..." oninput="app.searchBcMed(this.value)" autocomplete="off">
+    </div>
+    <div id="bc-med-list" style="max-height:25vh;overflow-y:auto;padding:.5rem .75rem;border-bottom:1px solid var(--border)"></div>
+    <div class="mbody" id="bc-form-area" style="display:none">
+      <div id="bc-med-selected" style="background:var(--pri-l);border-radius:8px;padding:.55rem .75rem;font-size:.82rem;color:var(--pri);font-weight:700;margin-bottom:.85rem"></div>
+      <!-- Cible -->
+      <div class="fg">
+        <label>Rattacher le code à :</label>
+        <select id="bc-target-sel" style="width:100%;padding:.7rem;border:1.5px solid var(--border);border-radius:8px;font-size:.9rem" onchange="app.bcTargetChange()">
+          <option value="medicament">Le médicament (DCI)</option>
+        </select>
+      </div>
+      <!-- Saisie code -->
+      <div class="fg">
+        <label>Code-barre / QR Code *</label>
+        <div style="display:flex;gap:.5rem">
+          <input id="bc-val" placeholder="Saisir ou scanner..." style="flex:1;padding:.75rem;border:1.5px solid var(--border);border-radius:8px;font-size:1rem" inputmode="none">
+          <button onclick="app.scanForBarcode()" style="padding:.75rem;border:1.5px solid var(--border);background:var(--pri-l);color:var(--pri);border-radius:8px;font-size:1.1rem;cursor:pointer" title="Scanner">&#9641;</button>
+        </div>
+      </div>
+    </div>
+    <div class="mfooter">
+      <button class="btn b-out" onclick="app.closeModal('modal-add-barcode')">Annuler</button>
+      <button class="btn b-pri" id="bc-save-btn" onclick="app.saveBarcode()" style="display:none">&#10003; Enregistrer le code</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL : AJOUTER PRODUIT (picker) ══════════════ -->
+<div id="modal-add-product" class="modal hidden">
+  <div class="mbox">
+    <div class="mhd">
+      <h3>Choisir un produit</h3>
+      <button class="mclose" onclick="app.closeModal('modal-add-product')">&#x2715;</button>
+    </div>
+    <div style="padding:.6rem .75rem;border-bottom:1px solid var(--border)">
+      <input id="add-prod-search" style="width:100%;padding:.65rem;border:1.5px solid var(--border);border-radius:8px;font-size:.95rem"
+        placeholder="Rechercher DCI, code..." oninput="app.searchAddProduct(this.value)" autocomplete="off">
+    </div>
+    <div id="add-prod-list" style="max-height:55vh;overflow-y:auto;padding:.5rem .75rem"></div>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL : SAISIE INVENTAIRE (qtite + prix) ══════════════ -->
+<div id="modal-inv-entry" class="modal hidden">
+  <div class="mbox">
+    <div class="mhd">
+      <h3 id="inv-entry-title">Saisie inventaire</h3>
+      <button class="mclose" onclick="app.closeModal('modal-inv-entry')">&#x2715;</button>
+    </div>
+    <div class="mbody">
+      <div id="inv-entry-info" style="background:var(--pri-l);border-radius:8px;padding:.6rem .75rem;font-size:.8rem;color:var(--pri);margin-bottom:.9rem;font-weight:600"></div>
+      <!-- Lot selector : existant ou nouveau lot -->
+      <div id="inv-entry-lots">
+        <div class="sl">Lot concerne</div>
+        <select id="inv-entry-lot-sel" onchange="app.toggleInvNewLot()" style="width:100%;padding:.7rem;border:1.5px solid var(--border);border-radius:8px;font-size:.9rem;margin-bottom:.85rem">
+          <option value="">Sans lot specifique</option>
+        </select>
+        <div id="inv-entry-new-lot" class="lot-box hidden" style="margin-bottom:.85rem">
+          <div class="fg"><label>Nouveau numero de lot *</label><input id="inv-new-lot-num" placeholder="Ex: LOT2025001"></div>
+          <div class="row2">
+            <div class="fg"><label>Date peremption</label><input type="date" id="inv-new-lot-exp"></div>
+            <div class="fg"><label>Stock theorique initial</label><input type="number" id="inv-new-lot-stock" value="0" min="0" inputmode="numeric"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sl">Quantité physique comptée</div>
+      <div class="fg">
+        <input type="number" id="inv-entry-qty" class="qty-big" min="0" inputmode="numeric" placeholder="0">
+      </div>
+      <div class="sl">Unite de comptage</div>
+      <div class="fg">
+        <select id="inv-entry-unit" style="width:100%;padding:.7rem;border:1.5px solid var(--border);border-radius:8px;font-size:1rem;background:#fff"></select>
+      </div>
+      <div class="sl">Prix d'achat unitaire</div>
+      <div class="fg">
+        <input type="number" id="inv-entry-pa" min="0" inputmode="numeric" placeholder="0" style="padding:.7rem;border:1.5px solid var(--border);border-radius:8px;font-size:1rem;width:100%">
+        <div style="font-size:.72rem;color:var(--gray);margin-top:.25rem">Laissez vide pour conserver le prix actuel</div>
+      </div>
+      <div class="fg"><label style="font-weight:600;font-size:.82rem">Observation</label><input id="inv-entry-obs" placeholder="Ex: boite ouverte, périmé..."></div>
+    </div>
+    <div class="mfooter">
+      <button id="inv-entry-del" class="btn b-out hidden" style="color:#dc2626;border-color:#ef4444" onclick="app.deleteInvLine(app._editLigneId,true)">&#128465; Supprimer</button>
+      <button class="btn b-out" onclick="app.closeModal('modal-inv-entry')">Annuler</button>
+      <button class="btn b-pri" onclick="app.saveInvEntry()">&#10003; Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script src="./auth-config.js"></script>
+<script>
+// ═══════════════════════════════════════════════════
+// DB (IndexedDB)
+// ═══════════════════════════════════════════════════
+const DB_NAME='pharma_inv_db', DB_VER=5;
+const STORES={
+  familles:[{n:'nom_famille',u:false},{n:'actif',u:false}],
+  medicaments:[{n:'famille_id',u:false},{n:'dci',u:false},{n:'designation',u:false},{n:'code_interne',u:false},{n:'actif',u:false}],
+  codes_medicaments:[{n:'code',u:true},{n:'medicament_id',u:false},{n:'actif',u:false}],
+  lots:[{n:'medicament_id',u:false},{n:'numero_lot',u:false},{n:'date_peremption',u:false},{n:'actif',u:false}],
+  codes_lots:[{n:'code',u:true},{n:'medicament_id',u:false},{n:'lot_id',u:false},{n:'actif',u:false}],
+  inventaires:[{n:'statut',u:false},{n:'synced',u:false}],
+  lignes_inventaire:[{n:'inventaire_id',u:false},{n:'medicament_id',u:false},{n:'lot_id',u:false},{n:'synced',u:false}],
+  server_inventory_sessions:[{n:'server_id',u:false},{n:'statut',u:false},{n:'synced_at',u:false}],
+  server_inventory_lines:[{n:'server_line_id',u:true},{n:'inventaire_id',u:false},{n:'famille',u:false},{n:'poste_saisie',u:false}],
+  mouvements_stock:[{n:'medicament_id',u:false},{n:'lot_id',u:false},{n:'type_mouvement',u:false},{n:'date_mouvement',u:false},{n:'structure_id',u:false},{n:'depot_id',u:false},{n:'synced',u:false},{n:'lot_type',k:['lot_id','type_mouvement'],u:false},{n:'medicament_date',k:['medicament_id','date_mouvement'],u:false}],
+  dispensations:[{n:'patient_reference',u:false},{n:'medicament_id',u:false},{n:'lot_id',u:false},{n:'date_dispensation',u:false},{n:'structure_id',u:false},{n:'synced',u:false}],
+  sync_conflicts:[{n:'entity',u:false},{n:'record_id',u:false},{n:'resolved',u:false}],
+  clients_espc:[{n:'nom_client',u:false},{n:'code_client',u:true},{n:'actif',u:false},{n:'synced',u:false}],
+  clients_mouvements_comptables:[{n:'client_id',u:false},{n:'type_mouvement',u:false},{n:'date_mouvement',u:false},{n:'synced',u:false},{n:'client_type',k:['client_id','type_mouvement'],u:false}],
+  clients_valeurs_stock:[{n:'client_id',u:true},{n:'synced',u:false}],
+  factures_clients:[{n:'client_id',u:false},{n:'date_facture',u:false},{n:'numero_facture',u:true},{n:'synced',u:false}],
+  lignes_facture_client:[{n:'facture_id',u:false},{n:'medicament_id',u:false},{n:'famille_id',u:false},{n:'synced',u:false}],
+  structures:[{n:'code_structure',u:true},{n:'actif',u:false}],
+  depots:[{n:'structure_id',u:false},{n:'actif',u:false}],
+  historique:[{n:'table_m',u:false},{n:'date_a',u:false}]
+};
+
+const db={
+  _db:null,
+  init(){
+    return new Promise((ok,fail)=>{
+      if(!window.indexedDB){fail('IndexedDB non supporté');return;}
+      const r=indexedDB.open(DB_NAME,DB_VER);
+      r.onerror=e=>fail(e.target.error);
+      r.onsuccess=e=>{this._db=e.target.result;ok();}
+      r.onupgradeneeded=e=>{
+        const d=e.target.result;
+        for(const [name,idxs] of Object.entries(STORES)){
+          if(!d.objectStoreNames.contains(name)){
+            const s=d.createObjectStore(name,{keyPath:'id'});
+            idxs.forEach(i=>{const keyPath=i.k||i.n;if(!s.indexNames.contains(i.n))s.createIndex(i.n,keyPath,{unique:i.u});});
+          }
+        }
+      };
+    });
+  },
+  _id(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);},
+  _store(n,m='readonly'){return this._db.transaction(n,m).objectStore(n);},
+  add(store,data){
+    return new Promise((ok,fail)=>{
+      if(!data.id)data.id=this._id();
+      if(!data.created_at)data.created_at=new Date().toISOString();
+      if(!data.version)data.version=1;
+      data.updated_at=new Date().toISOString();
+      const r=this._store(store,'readwrite').add(data);
+      r.onsuccess=()=>ok(data.id);
+      r.onerror=e=>fail(e.target.error);
+    });
+  },
+  put(store,data){
+    return new Promise((ok,fail)=>{
+      data.version=Number(data.version||0)+1;
+      data.updated_at=new Date().toISOString();
+      const r=this._store(store,'readwrite').put(data);
+      r.onsuccess=()=>ok(data.id);
+      r.onerror=e=>fail(e.target.error);
+    });
+  },
+  acknowledgeSync(store,sent){
+    return new Promise((ok,fail)=>{
+      const transaction=this._db.transaction(store,'readwrite');
+      const records=transaction.objectStore(store);
+      const request=records.get(sent.id);
+      request.onsuccess=()=>{
+        const current=request.result;
+        if(current?.synced===false && current.version===sent.version && current.updated_at===sent.updated_at){
+          records.put({...current,synced:true});
+        }
+      };
+      transaction.oncomplete=()=>ok();
+      transaction.onabort=()=>fail(transaction.error);
+    });
+  },
+  get(store,id){
+    return new Promise((ok,fail)=>{
+      const r=this._store(store).get(id);
+      r.onsuccess=()=>ok(r.result);
+      r.onerror=e=>fail(e.target.error);
+    });
+  },
+  getAll(store,withDeleted=false){
+    return new Promise((ok,fail)=>{
+      const r=this._store(store).getAll();
+      r.onsuccess=()=>ok(withDeleted?r.result:r.result.filter(x=>!x||x.supprime!==true));
+      r.onerror=e=>fail(e.target.error);
+    });
+  },
+  byIndex(store,idx,val){
+    return new Promise((ok,fail)=>{
+      const r=this._store(store).index(idx).getAll(val);
+      r.onsuccess=()=>ok(r.result.filter(x=>!x||x.supprime!==true));
+      r.onerror=e=>fail(e.target.error);
+    });
+  },
+  oneByIndex(store,idx,val){
+    return new Promise((ok,fail)=>{
+      const r=this._store(store).index(idx).get(val);
+      r.onsuccess=()=>ok(r.result);
+      r.onerror=e=>fail(e.target.error);
+    });
+  },
+  async search(q,famId,limit=60){
+    return new Promise((ok,fail)=>{
+      const s=this._store('medicaments');
+      const res=[];const ql=q.toLowerCase();
+      const r=s.openCursor();
+      r.onsuccess=e=>{
+        const c=e.target.result;
+        if(c&&res.length<limit){
+          const v=c.value;
+          if(v.actif!==false){
+            if(app.familyMatches(v.famille_id,famId)){
+              if(!ql||(v.dci&&v.dci.toLowerCase().includes(ql))||(v.designation&&v.designation.toLowerCase().includes(ql))||(v.code_interne&&v.code_interne.toLowerCase().includes(ql)))
+                res.push(v);
+            }
+          }
+          c.continue();
+        }else ok(res);
+      };
+      r.onerror=e=>fail(e.target.error);
+    });
+  }
+};
+
+// ═══════════════════════════════════════════════════
+// APP
+// ═══════════════════════════════════════════════════
+localStorage.removeItem('pharmaGoogleSyncKey');
+
+const app={
+  invId:null,
+  _pendMed:null,_pendLot:null,_pendCode:null,
+  _scanForField:null,_scanForModal:false,
+  _detector:null,_stream:null,_scanning:false,
+  SERVER_URL: localStorage.getItem('pharmaServerUrl') || ((location.origin && location.origin.startsWith('http')) ? location.origin : 'http://pharmastock.local:3780'),
+  SERVER_CANDIDATES: ['http://pharmastock.local:3780','http://pharmastock:3780','http://192.168.2.106:3780','http://192.168.2.102:3780','http://192.168.2.125:3780','http://192.168.1.125:3780'],
+  GOOGLE_SYNC_TABLES: ['familles','medicaments','codes_medicaments','lots','codes_lots','inventaires','lignes_inventaire'],
+  COUNT_UNITS:['BOITE','AMPOULE','COMPRIME','PLAQUETTE','UNITE','CARTON','KIT','FLACON'],
+
+  normalizeCountUnit(value){
+    const unit=String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();
+    return this.COUNT_UNITS.includes(unit)?unit:'UNITE';
+  },
+
+  unitOptions(current){
+    const selected=this.normalizeCountUnit(current||'UNITE');
+    return this.COUNT_UNITS.map(u=>`<option value="${u}"${u===selected?' selected':''}>${u}</option>`).join('');
+  },
+
+  lineUnit(line, med){
+    return this.normalizeCountUnit(line&&line.unite_comptage?line.unite_comptage:(med&&med.unite_comptage?med.unite_comptage:'UNITE'));
+  },
+
+  inventoryUnitTotals(lines, med){
+    const totals={};
+    for(const l of lines||[]){
+      const unit=this.lineUnit(l,med);
+      totals[unit]=(totals[unit]||0)+(Number(l.quantite_physique)||0);
+    }
+    return Object.entries(totals).map(([unit,total])=>`${total} ${unit}`).join(' + ');
+  },
+
+  async init(){
+    document.getElementById('btn-back').addEventListener('click',()=>this.go('accueil'));
+    document.getElementById('btn-sync').addEventListener('click',()=>this.openModal('modal-sync'));
+    document.getElementById('google-auth-form').addEventListener('submit',event=>{
+      event.preventDefault();
+      void this.signInGoogle(event.currentTarget);
+    });
+    document.getElementById('form-inv').addEventListener('submit',e=>{e.preventDefault();this.startInv();});
+    // BarcodeDetector init
+    if('BarcodeDetector' in window){
+      try{this._detector=new BarcodeDetector({formats:['qr_code','ean_13','ean_8','code_128','upc_a','upc_e','data_matrix']});}catch(e){}
+    }
+    // Seed data
+    const structs=await db.getAll('structures');
+    if(!structs.length){
+      const sid=await db.add('structures',{nom_structure:'PHARMACIE CENTRALE',code_structure:'PHC01',actif:true});
+      await db.add('depots',{structure_id:sid,nom_depot:'MAGASIN PRINCIPAL',actif:true});
+    }
+    await this.loadFamilles();
+    await this.updateBadge();
+  },
+
+  go(view){
+    this.closeFabMenu();
+    document.querySelectorAll('.view').forEach(v=>{v.classList.remove('active');v.classList.add('hidden');});
+    const p=document.getElementById('page-'+view);
+    if(p){p.classList.remove('hidden');p.classList.add('active');}
+    const bb=document.getElementById('btn-back');
+    bb.classList.toggle('hidden',view==='accueil');
+    if(view==='nouvel-inventaire')this.initNouvelInv();
+    if(view==='inventaire'){this.loadFamilles();this.renderInventoried('');}
+    if(view==='historique-inventaires')this.renderInventoryHistory('');
+    if(view==='liste-medicaments')this.searchMedsListe('');
+    if(view==='clients')this.refreshClients();
+    if(view==='facturation')this.invoiceInit();
+    if(view==='scan')this.startCamera();
+    else this.stopCamera();
+  },
+
+  invoice:{clientId:null,familyId:'',lines:[]},
+  async invoiceInit(){
+    const today=new Date().toISOString().split('T')[0];
+    document.getElementById('invoice-date').value=today;
+    if(!document.getElementById('invoice-number').value)document.getElementById('invoice-number').value='FAC-'+Date.now().toString(36).toUpperCase();
+    const clients=(await db.getAll('clients_espc')).filter(c=>c.actif!==false).sort((a,b)=>(a.nom_client||'').localeCompare(b.nom_client||''));
+    const clientSel=document.getElementById('invoice-client');
+    clientSel.innerHTML=clients.map(c=>`<option value="${c.id}">${c.nom_client}${c.code_client?' - '+c.code_client:''}</option>`).join('')||'<option value="">Aucun client</option>';
+    if(!this.invoice.clientId&&clients.length)this.invoice.clientId=clients[0].id;
+    if(this.invoice.clientId)clientSel.value=this.invoice.clientId;
+    const fams=(await db.getAll('familles')).filter(f=>f.actif!==false).sort((a,b)=>(a.nom_famille||'').localeCompare(b.nom_famille||''));
+    const famSel=document.getElementById('invoice-family');
+    famSel.innerHTML='<option value="">Toutes les familles</option>'+fams.map(f=>`<option value="${f.id}">${f.nom_famille}</option>`).join('');
+    famSel.value=this.invoice.familyId||'';
+    await this.invoiceSearchMeds('');
+    await this.invoiceRender();
+  },
+  async invoiceSetClient(id){
+    this.invoice.clientId=id||null;
+    await this.invoiceRender();
+  },
+  async invoiceSetFamily(id){
+    this.invoice.familyId=id||'';
+    await this.invoiceSearchMeds(document.getElementById('invoice-search').value||'');
+  },
+  async invoiceSearchMeds(q){
+    const target=document.getElementById('invoice-med-results');
+    if(!target)return;
+    const meds=await db.search(q||'',this.invoice.familyId||null,40);
+    const fams=await db.getAll('familles');
+    meds.sort((a,b)=>(a.dci||'').localeCompare(b.dci||''));
+    target.innerHTML=meds.map(m=>{
+      const fam=fams.find(f=>f.id===m.famille_id);
+      const price=Number(m.prix_vente_unitaire||m.prix_vente||m.prix_achat_unitaire||0);
+      return `<article class="client-row">
+        <div class="client-card-head">
+          <div>
+            <h4>${m.dci||''}</h4>
+            <div class="meta">${fam?fam.nom_famille:''}${m.unite_comptage?' - '+m.unite_comptage:''} - PU ${this.fmtMoney(price)}</div>
+          </div>
+          <button onclick="app.invoiceAddLine('${m.id}')">Ajouter</button>
+        </div>
+      </article>`;
+    }).join('')||'<p class="sync-empty">Aucun medicament pour cette famille ou recherche.</p>';
+  },
+  async invoiceAddLine(medId){
+    const med=await db.get('medicaments',medId);
+    if(!med)return;
+    const existing=this.invoice.lines.find(l=>l.medicament_id===medId);
+    if(existing)existing.quantite+=1;
+    else this.invoice.lines.push({
+      medicament_id:med.id,
+      famille_id:med.famille_id,
+      dci:med.dci||'',
+      unite:med.unite_comptage||'',
+      prix_unitaire:Number(med.prix_vente_unitaire||med.prix_vente||med.prix_achat_unitaire||0),
+      quantite:1
+    });
+    await this.invoiceRender();
+  },
+  invoiceLineTotal(line){
+    return Number(line.quantite||0)*Number(line.prix_unitaire||0);
+  },
+  invoiceTotal(){
+    return this.invoice.lines.reduce((s,l)=>s+this.invoiceLineTotal(l),0);
+  },
+  async invoiceRender(){
+    const list=document.getElementById('invoice-lines');
+    if(!list)return;
+    list.innerHTML=this.invoice.lines.map((l,i)=>`<article class="invoice-line">
+      <h4>${l.dci}</h4>
+      <div class="invoice-grid">
+        <div class="fg"><label>Quantite</label><input type="number" min="0" step="1" value="${l.quantite}" onchange="app.invoiceUpdateLine(${i},'quantite',this.value)"></div>
+        <div class="fg"><label>Prix unitaire</label><input type="number" min="0" step="0.01" value="${l.prix_unitaire}" onchange="app.invoiceUpdateLine(${i},'prix_unitaire',this.value)"></div>
+      </div>
+      <div class="meta">${l.unite||''}</div>
+      <div class="line-total">${this.fmtMoney(this.invoiceLineTotal(l))}</div>
+      <button class="btn b-out" style="margin-top:.45rem" onclick="app.invoiceRemoveLine(${i})">Retirer</button>
+    </article>`).join('')||'<p class="sync-empty">Ajoutez les medicaments a facturer.</p>';
+    const oldBalance=this.invoice.clientId?(await this.recalcClientStock(this.invoice.clientId)).solde_comptable:0;
+    const total=this.invoiceTotal();
+    document.getElementById('invoice-old-balance').textContent=this.fmtMoney(oldBalance);
+    document.getElementById('invoice-total').textContent=this.fmtMoney(total);
+    document.getElementById('invoice-new-balance').textContent=this.fmtMoney(Number(oldBalance||0)+total);
+  },
+  async invoiceUpdateLine(index,field,value){
+    if(!this.invoice.lines[index])return;
+    this.invoice.lines[index][field]=Number(value||0);
+    await this.invoiceRender();
+  },
+  async invoiceRemoveLine(index){
+    this.invoice.lines.splice(index,1);
+    await this.invoiceRender();
+  },
+  async invoiceClear(){
+    this.invoice.lines=[];
+    document.getElementById('invoice-number').value='FAC-'+Date.now().toString(36).toUpperCase();
+    await this.invoiceRender();
+  },
+  async invoiceSave(){
+    if(!this.invoice.clientId){alert('Selectionnez un client');return;}
+    if(!this.invoice.lines.length){alert('Ajoutez au moins un medicament');return;}
+    const total=this.invoiceTotal();
+    if(total<=0){alert('Le montant de la facture doit etre superieur a zero');return;}
+    const numero=document.getElementById('invoice-number').value.trim()||('FAC-'+Date.now().toString(36).toUpperCase());
+    const date=document.getElementById('invoice-date').value||new Date().toISOString().split('T')[0];
+    try{
+      const oldBalance=(await this.recalcClientStock(this.invoice.clientId)).solde_comptable;
+      const factureId=await db.add('factures_clients',{
+        client_id:this.invoice.clientId,
+        numero_facture:numero,
+        date_facture:date,
+        entete:'DISTRICT SANITAIRE DE TOUMODI',
+        montant_total:total,
+        ancienne_balance:Number(oldBalance||0),
+        nouvelle_balance:Number(oldBalance||0)+total,
+        synced:false
+      });
+      for(const line of this.invoice.lines){
+        await db.add('lignes_facture_client',{facture_id:factureId,medicament_id:line.medicament_id,famille_id:line.famille_id,dci:line.dci,unite:line.unite,quantite:Number(line.quantite||0),prix_unitaire:Number(line.prix_unitaire||0),montant_ligne:this.invoiceLineTotal(line),synced:false});
+      }
+      await db.add('clients_mouvements_comptables',{client_id:this.invoice.clientId,type_mouvement:'facture',date_mouvement:date,montant:total,reference_document:numero,observation:'Facture client',actif:true,synced:false});
+      await this.recalcClientStock(this.invoice.clientId);
+      await this.updateBadge();
+      this.toast('Facture enregistree et balance client mise a jour');
+      await this.invoiceClear();
+    }catch(e){alert(e.name==='ConstraintError'?'Ce numero de facture existe deja.':'Erreur facture : '+e.message);}
+  },
+
+  _clientId:null,
+  _clientTab:'compta',
+  _clientMovementType:null,
+  fmtMoney(v){
+    return (Number(v)||0).toLocaleString('fr-FR',{maximumFractionDigits:0})+' FCFA';
+  },
+  clientDelta(type, amount){
+    const n=Number(amount)||0;
+    if(type==='commande'||type==='facture')return n;
+    if(type==='versement')return -n;
+    return n;
+  },
+  async ensureClientStock(clientId){
+    const rows=await db.byIndex('clients_valeurs_stock','client_id',clientId);
+    if(rows.length)return rows[0];
+    const id=await db.add('clients_valeurs_stock',{client_id:clientId,valeur_stock:0,solde_comptable:0,total_commandes:0,total_versements:0,total_ajustements:0,synced:false});
+    return await db.get('clients_valeurs_stock',id);
+  },
+  async recalcClientStock(clientId){
+    const mouvements=(await db.byIndex('clients_mouvements_comptables','client_id',clientId)).filter(m=>m.actif!==false);
+    let totalCommandes=0,totalVersements=0,totalAjustements=0,valeurStock=0;
+    mouvements.sort((a,b)=>(a.date_mouvement||'').localeCompare(b.date_mouvement||''));
+    for(const m of mouvements){
+      const montant=Number(m.montant||0);
+      if(m.type_mouvement==='commande'||m.type_mouvement==='facture')totalCommandes+=montant;
+      if(m.type_mouvement==='versement')totalVersements+=montant;
+      if(m.type_mouvement==='ajustement')totalAjustements+=montant;
+      valeurStock+=this.clientDelta(m.type_mouvement,montant);
+    }
+    const stock=await this.ensureClientStock(clientId);
+    const nextSolde=totalCommandes-totalVersements;
+    const changed=Number(stock.valeur_stock||0)!==valeurStock
+      || Number(stock.solde_comptable||0)!==nextSolde
+      || Number(stock.total_commandes||0)!==totalCommandes
+      || Number(stock.total_versements||0)!==totalVersements
+      || Number(stock.total_ajustements||0)!==totalAjustements;
+    if(changed){
+      stock.valeur_stock=valeurStock;
+      stock.solde_comptable=nextSolde;
+      stock.total_commandes=totalCommandes;
+      stock.total_versements=totalVersements;
+      stock.total_ajustements=totalAjustements;
+      stock.synced=false;
+      await db.put('clients_valeurs_stock',stock);
+    }
+    return stock;
+  },
+  async refreshClients(){
+    const clients=(await db.getAll('clients_espc')).filter(c=>c.actif!==false).sort((a,b)=>(a.nom_client||'').localeCompare(b.nom_client||''));
+    const sel=document.getElementById('client-select');
+    if(!sel)return;
+    if(!clients.length){
+      sel.innerHTML='<option value="">Aucun client ESPC</option>';
+      this._clientId=null;
+      document.getElementById('client-ledger').innerHTML='<p class="sync-empty">Creez un client ESPC pour gerer sa comptabilite.</p>';
+      document.getElementById('client-stock-list').innerHTML='<p class="sync-empty">Aucun client a afficher.</p>';
+      ['client-stock-value','client-balance','client-orders-total','client-payments-total'].forEach(id=>document.getElementById(id).textContent='0 FCFA');
+      return;
+    }
+    if(!this._clientId||!clients.some(c=>c.id===this._clientId))this._clientId=clients[0].id;
+    sel.innerHTML=clients.map(c=>`<option value="${c.id}"${c.id===this._clientId?' selected':''}>${c.nom_client}${c.code_client?' - '+c.code_client:''}</option>`).join('');
+    await this.renderClientAccounting();
+    await this.renderClientStockList();
+  },
+  showClientTab(tab){
+    this._clientTab=tab;
+    document.getElementById('tab-client-compta').classList.toggle('active',tab==='compta');
+    document.getElementById('tab-client-stock').classList.toggle('active',tab==='stock');
+    document.getElementById('client-compta-panel').classList.toggle('hidden',tab!=='compta');
+    document.getElementById('client-stock-panel').classList.toggle('hidden',tab!=='stock');
+    if(tab==='stock')this.renderClientStockList();
+  },
+  async selectClient(id){
+    this._clientId=id||null;
+    await this.renderClientAccounting();
+  },
+  openClientModal(){
+    document.getElementById('client-name').value='';
+    document.getElementById('client-code').value='';
+    document.getElementById('client-initial-stock').value='0';
+    this.openModal('modal-client');
+    setTimeout(()=>document.getElementById('client-name').focus(),200);
+  },
+  async saveClient(){
+    const name=document.getElementById('client-name').value.trim();
+    if(!name){alert('Saisissez le nom du client ESPC');return;}
+    const code=document.getElementById('client-code').value.trim()||('ESPC-'+Date.now().toString(36).toUpperCase());
+    try{
+      const id=await db.add('clients_espc',{nom_client:name,code_client:code,actif:true,synced:false});
+      const initial=Number(document.getElementById('client-initial-stock').value||0);
+      if(initial>0){
+        await db.add('clients_mouvements_comptables',{client_id:id,type_mouvement:'ajustement',date_mouvement:new Date().toISOString().split('T')[0],montant:initial,reference_document:'Initial',observation:'Valeur initiale du stock',actif:true,synced:false});
+      }
+      this._clientId=id;
+      this.closeModal('modal-client');
+      await this.recalcClientStock(id);
+      await this.refreshClients();
+      await this.updateBadge();
+      this.toast('Client ESPC enregistre');
+    }catch(e){alert(e.name==='ConstraintError'?'Ce code client existe deja.':'Erreur : '+e.message);}
+  },
+  openClientMovement(type){
+    if(!this._clientId){alert('Selectionnez ou creez un client ESPC');return;}
+    this._clientMovementType=type;
+    const titles={commande:'Nouvelle commande',versement:'Nouveau versement',ajustement:'Ajustement valeur stock'};
+    document.getElementById('client-movement-title').textContent=titles[type]||'Mouvement client';
+    document.getElementById('client-movement-date').value=new Date().toISOString().split('T')[0];
+    document.getElementById('client-movement-amount').value='';
+    document.getElementById('client-movement-ref').value='';
+    document.getElementById('client-movement-note').value='';
+    document.getElementById('client-adjustment-help').textContent=type==='ajustement'
+      ? 'Ajustement admin : montant positif pour augmenter la valeur du stock, montant negatif pour la diminuer.'
+      : type==='versement'
+        ? 'Un versement defalque la valeur du stock du client.'
+        : 'Une commande augmente la valeur du stock du client.';
+    this.openModal('modal-client-movement');
+  },
+  async saveClientMovement(){
+    if(!this._clientId||!this._clientMovementType)return;
+    const raw=document.getElementById('client-movement-amount').value;
+    if(raw===''){alert('Saisissez le montant');return;}
+    const amount=Number(raw);
+    if(Number.isNaN(amount)){alert('Montant invalide');return;}
+    if(this._clientMovementType!=='ajustement'&&amount<0){alert('Le montant doit etre positif');return;}
+    await db.add('clients_mouvements_comptables',{
+      client_id:this._clientId,
+      type_mouvement:this._clientMovementType,
+      date_mouvement:document.getElementById('client-movement-date').value||new Date().toISOString().split('T')[0],
+      montant:amount,
+      reference_document:document.getElementById('client-movement-ref').value.trim(),
+      observation:document.getElementById('client-movement-note').value.trim(),
+      actif:true,
+      synced:false
+    });
+    this.closeModal('modal-client-movement');
+    await this.recalcClientStock(this._clientId);
+    await this.refreshClients();
+    await this.updateBadge();
+    this.toast('Mouvement client enregistre');
+  },
+  async renderClientAccounting(){
+    if(!this._clientId)return;
+    const stock=await this.recalcClientStock(this._clientId);
+    document.getElementById('client-stock-value').textContent=this.fmtMoney(stock.valeur_stock);
+    document.getElementById('client-balance').textContent=this.fmtMoney(stock.solde_comptable);
+    document.getElementById('client-orders-total').textContent=this.fmtMoney(stock.total_commandes);
+    document.getElementById('client-payments-total').textContent=this.fmtMoney(stock.total_versements);
+    document.getElementById('client-stock-value').className='client-stock-value';
+    document.getElementById('client-balance').className='client-balance';
+    const mouvements=(await db.byIndex('clients_mouvements_comptables','client_id',this._clientId)).filter(m=>m.actif!==false).sort((a,b)=>(b.date_mouvement||'').localeCompare(a.date_mouvement||''));
+    const ledger=document.getElementById('client-ledger');
+    ledger.innerHTML=mouvements.map(m=>{
+      const label=m.type_mouvement==='commande'?'Commande':m.type_mouvement==='facture'?'Facture':m.type_mouvement==='versement'?'Versement':'Ajustement admin';
+      const sign=this.clientDelta(m.type_mouvement,m.montant)>=0?'+':'-';
+      return `<article class="client-row ${m.type_mouvement}">
+        <h4>${label}</h4>
+        <div class="meta">${m.date_mouvement||''}${m.reference_document?' - Ref: '+m.reference_document:''}</div>
+        ${m.observation?`<div class="meta">${m.observation}</div>`:''}
+        <div class="amt">${sign} ${this.fmtMoney(Math.abs(Number(m.montant||0)))}</div>
+      </article>`;
+    }).join('')||'<p class="sync-empty">Aucun mouvement comptable pour ce client.</p>';
+  },
+  async renderClientStockList(){
+    const clients=(await db.getAll('clients_espc')).filter(c=>c.actif!==false).sort((a,b)=>(a.nom_client||'').localeCompare(b.nom_client||''));
+    const target=document.getElementById('client-stock-list');
+    if(!target)return;
+    const rows=[];
+    for(const client of clients){
+      const stock=await this.recalcClientStock(client.id);
+      rows.push({client,stock});
+    }
+    target.innerHTML=rows.map(({client,stock})=>`<article class="client-row">
+      <div class="client-card-head">
+        <div>
+          <h4>${client.nom_client}</h4>
+          <div class="meta">${client.code_client||''}</div>
+        </div>
+        <button onclick="app.showClientTab('compta');app.selectClient('${client.id}');document.getElementById('client-select').value='${client.id}'">Ouvrir</button>
+      </div>
+      <div class="amt client-stock-value">Stock: ${this.fmtMoney(stock.valeur_stock)}</div>
+      <div class="meta">Commandes: ${this.fmtMoney(stock.total_commandes)} - Versements: ${this.fmtMoney(stock.total_versements)} - Solde: ${this.fmtMoney(stock.solde_comptable)}</div>
+    </article>`).join('')||'<p class="sync-empty">Aucun client a afficher.</p>';
+  },
+
+  _familyNames: new Map(),
+  familyMatches(id, selected){
+    if(selected===null || selected===undefined || selected==='')return true;
+    if(String(id)===String(selected))return true;
+    const a=this._familyNames.get(String(id));
+    const b=this._familyNames.get(String(selected));
+    return Boolean(a && b && a===b);
+  },
+  async loadFamilles(){
+    const fams=await db.getAll('familles');
+    const key=f=>String(f.nom_famille||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('fr');
+    this._familyNames=new Map(fams.map(f=>[String(f.id),key(f)]));
+    const unique=new Map();
+    fams.filter(f=>f.actif!==false).forEach(f=>{if(key(f)&&!unique.has(key(f)))unique.set(key(f),f);});
+    const sel=document.getElementById('filter-famille-inv');
+    if(sel){
+      const prev=sel.value || this._famFilter;
+      sel.replaceChildren(new Option('Toutes les familles',''));
+      [...unique.values()].sort((a,b)=>a.nom_famille.localeCompare(b.nom_famille)).forEach(f=>{
+        const option=new Option(f.nom_famille,String(f.id));
+        option.selected=Boolean(prev && this.familyMatches(f.id,prev));
+        sel.add(option);
+      });
+      this._famFilter=sel.value||null;
+    }
+  },
+
+  async initNouvelInv(){
+    const structs=await db.getAll('structures');
+    const depots=await db.getAll('depots');
+    document.getElementById('inv-structure').innerHTML=structs.map(s=>`<option value="${s.id}">${s.nom_structure}</option>`).join('');
+    document.getElementById('inv-depot').innerHTML=depots.map(d=>`<option value="${d.id}">${d.nom_depot}</option>`).join('');
+    document.getElementById('inv-date').value=new Date().toISOString().split('T')[0];
+  },
+
+  async startInv(){
+    const nom=document.getElementById('inv-nom').value.trim();
+    if(!nom){alert('Saisissez un nom pour l\'inventaire');return;}
+    this.invId=await db.add('inventaires',{
+      nom_inventaire:nom,
+      structure:document.getElementById('inv-structure').value,
+      depot:document.getElementById('inv-depot').value,
+      date_inventaire:document.getElementById('inv-date').value,
+      utilisateur:document.getElementById('inv-agent').value,
+      statut:'en_cours',synced:false
+    });
+    this.toast('Inventaire démarré !');
+    this.go('inventaire');
+  },
+
+  async renderInventoryHistory(q=''){
+    const target=document.getElementById('history-inv-list');
+    if(!target)return;
+    const [inventaires,lignes]=await Promise.all([db.getAll('inventaires'),db.getAll('lignes_inventaire')]);
+    const query=String(q||'').toLowerCase();
+    const rows=inventaires
+      .filter(inv=>{
+        const text=`${inv.nom_inventaire||''} ${inv.date_inventaire||''} ${inv.utilisateur||''} ${inv.statut||''}`.toLowerCase();
+        return !query||text.includes(query);
+      })
+      .map(inv=>{
+        const invLines=lignes.filter(l=>l.inventaire_id===inv.id);
+        const total=invLines.reduce((s,l)=>s+(Number(l.quantite_physique)||0),0);
+        return {inv,count:invLines.length,total};
+      })
+      .sort((a,b)=>String(b.inv.date_inventaire||b.inv.created_at||'').localeCompare(String(a.inv.date_inventaire||a.inv.created_at||'')));
+    target.innerHTML=rows.map(({inv,count,total})=>`
+      <div class="item" style="border-left:3px solid ${inv.id===this.invId?'var(--sec)':'var(--pri)'}">
+        <div style="display:flex;justify-content:space-between;gap:.6rem;align-items:flex-start">
+          <h4 style="flex:1">${inv.nom_inventaire||'Inventaire sans nom'}</h4>
+          <span style="background:${inv.id===this.invId?'#f0fdf4':'#eff6ff'};color:${inv.id===this.invId?'var(--sec)':'var(--pri)'};font-weight:800;font-size:.75rem;padding:.2rem .5rem;border-radius:999px">${inv.id===this.invId?'actif':(inv.statut||'en_cours')}</span>
+        </div>
+        <div class="meta">${inv.date_inventaire||''}${inv.utilisateur?' - '+inv.utilisateur:''}</div>
+        <div class="meta">${count} ligne(s) - total ${total}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin-top:.65rem">
+          <button class="btn-inv" onclick="app.openInventoryFromHistory('${inv.id}')">Ouvrir</button>
+          <button class="btn-inv" style="background:#f8fafc;color:#334155;border:1.5px solid var(--border)" onclick="app.exportInventoryById('${inv.id}')">Exporter</button>
+        </div>
+      </div>`).join('')||'<p class="sync-empty">Aucun inventaire trouve dans cet APK.</p>';
+  },
+
+  async openInventoryFromHistory(id){
+    const inv=await db.get('inventaires',id);
+    if(!inv){alert('Inventaire introuvable');return;}
+    this.invId=id;
+    this.toast('Inventaire ouvert : '+(inv.nom_inventaire||inv.date_inventaire||id));
+    this.go('inventaire');
+  },
+
+  _famFilter:null,
+  setFamilleInv(val){
+    this._famFilter=val||null;
+    this.renderInventoried(document.getElementById('search-inv').value||'');
+    // Also load product picker list if open
+    const srch=document.getElementById('add-prod-search');
+    if(srch) this.searchAddProduct(srch.value||'');
+  },
+
+  // ── PAGE INVENTAIRE : affiche uniquement les produits déjà comptés ──
+  async renderInventoried(q){
+    const cnt=document.getElementById('inv-list');
+    if(!cnt)return;
+    if(!this.invId){
+      cnt.innerHTML='<p style="color:var(--gray);text-align:center;padding:2rem;font-size:.9rem">Aucun inventaire en cours.<br>Démarrez un inventaire depuis l\'accueil.</p>';
+      return;
+    }
+    const [lignes,meds,lots,fams]=await Promise.all([
+      db.getAll('lignes_inventaire'),db.getAll('medicaments'),db.getAll('lots'),db.getAll('familles')
+    ]);
+    // Lignes de CET inventaire
+    let invLines=lignes.filter(l=>l.inventaire_id===this.invId);
+    // Filtre famille
+    if(this._famFilter) invLines=invLines.filter(l=>this.familyMatches(l.famille_id,this._famFilter));
+    // Grouper par medicament
+    const medMap={};
+    for(const l of invLines){
+      if(!medMap[l.medicament_id]) medMap[l.medicament_id]=[];
+      medMap[l.medicament_id].push(l);
+    }
+    // Obtenir les médicaments distincts triés alphabétiquement
+    let medIds=Object.keys(medMap);
+    let medObjs=medIds.map(id=>meds.find(m=>m.id===id)).filter(Boolean);
+    // Filtre texte
+    if(q){
+      const ql=q.toLowerCase();
+      medObjs=medObjs.filter(m=>
+        (m.dci&&m.dci.toLowerCase().includes(ql))||
+        (m.designation&&m.designation.toLowerCase().includes(ql))||
+        (m.code_interne&&m.code_interne.toLowerCase().includes(ql))
+      );
+    }
+    // Tri alphabétique
+    medObjs.sort((a,b)=>a.dci.localeCompare(b.dci));
+
+    // Mettre à jour le résumé
+    const totalLignes=invLines.length;
+    const totalQty=invLines.reduce((s,l)=>s+(Number(l.quantite_physique)||0),0);
+    document.getElementById('inv-count').textContent=medObjs.length+' produit(s) inventorié(s)';
+    document.getElementById('inv-total-qty').textContent=totalQty>0?'Total : '+totalQty+' unités':'';
+
+    if(!medObjs.length){
+      cnt.innerHTML='<div style="text-align:center;padding:2.5rem 1rem;color:var(--gray)">'
+        +'<div style="font-size:2rem;margin-bottom:.7rem">📋</div>'
+        +'<p style="font-size:.9rem;margin-bottom:.3rem">Aucun produit inventorié'+(q?' pour cette recherche':this._famFilter?' dans cette famille':'')+'.</p>'
+        +'<p style="font-size:.8rem">Appuyez sur <strong>+ Ajouter produit</strong> pour commencer.</p>'
+        +'</div>';
+      return;
+    }
+
+    cnt.innerHTML=medObjs.map(m=>{
+      const lignesMed=medMap[m.id]||[];
+      const fam=fams.find(f=>f.id===m.famille_id);
+      const totalMedLabel=this.inventoryUnitTotals(lignesMed,m);
+      // Détail par lot
+      let lotRows='';
+      for(const l of lignesMed){
+        const lot=l.lot_id?lots.find(lt=>lt.id===l.lot_id):null;
+        const lotLabel=lot?'Lot '+lot.numero_lot+(lot.date_peremption?' · exp '+lot.date_peremption:''):'Sans lot';
+        lotRows+=`<div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;border-radius:7px;padding:.45rem .65rem;margin-bottom:.3rem;font-size:.8rem">
+          <span style="color:var(--gray)">${lotLabel}</span>
+          <span style="font-weight:700;color:var(--sec)">${l.quantite_physique} ${this.lineUnit(l,m)}</span>
+          <span style="display:flex;gap:.3rem"><button onclick="app.editInvLine('${l.id}')" style="border:1.5px solid var(--pri);background:var(--pri-l);color:var(--pri);border-radius:6px;padding:.2rem .5rem;font-size:.72rem;font-weight:700;cursor:pointer">✎</button><button onclick="app.deleteInvLine('${l.id}')" aria-label="Supprimer cette saisie" style="border:1.5px solid #ef4444;background:#fef2f2;color:#dc2626;border-radius:6px;padding:.3rem .6rem;font-size:.8rem;font-weight:700;cursor:pointer">&#128465;</button></span>
+        </div>`;
+      }
+      return `<div class="item" style="border-left:3px solid var(--sec)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <h4 style="flex:1">${m.dci}</h4>
+          <span style="background:#f0fdf4;color:var(--sec);font-weight:700;font-size:.82rem;padding:.2rem .6rem;border-radius:12px;white-space:nowrap">${totalMedLabel}</span>
+        </div>
+        <div class="meta" style="margin-bottom:.5rem">${fam?fam.nom_famille:''}${m.code_interne?' · '+m.code_interne:''}</div>
+        ${lotRows}
+        <button class="btn-inv" style="background:var(--pri-l);color:var(--pri);border:1.5px solid var(--pri)" 
+          onclick="app.openInvEntry('${m.id}')">+ Nouvelle saisie</button>
+        <button class="btn-inv" style="background:#fef2f2;color:#dc2626;border:1.5px solid #ef4444;margin-top:.4rem"
+          onclick="app.deleteInvProduct('${m.id}')">&#128465; Retirer ce produit de l'inventaire</button>
+      </div>`;
+    }).join('');
+  },
+
+  // -- SUPPRESSION (logique : le marqueur "supprime" est propage par la synchro) --
+  async _softDelete(store,rec){
+    rec.supprime=true;rec.actif=false;
+    rec.deleted_at=new Date().toISOString();
+    rec.deleted_by=localStorage.getItem('pharmaDeviceHolder')||'';
+    rec.synced=false;
+    await db.put(store,rec);
+  },
+  async _cancelLineMovements(ligne){
+    const all=await db.getAll('mouvements_stock');
+    for(const m of all){
+      if(m.type_mouvement!=='inventaire')continue;
+      if(m.ligne_id){
+        if(m.ligne_id===ligne.id)await this._softDelete('mouvements_stock',m);
+      }else if(m.reference_document===ligne.inventaire_id&&m.lot_id===ligne.lot_id&&m.medicament_id===ligne.medicament_id&&Number(m.quantite)===Number(ligne.quantite_physique)){
+        await this._softDelete('mouvements_stock',m);break; // anciens mouvements sans ligne_id : un seul
+      }
+    }
+  },
+  async deleteInvLine(ligneId,fromModal=false){
+    if(!ligneId)return;
+    const ligne=await db.get('lignes_inventaire',ligneId);
+    if(!ligne||ligne.supprime)return;
+    const med=await db.get('medicaments',ligne.medicament_id);
+    if(!confirm('Supprimer cette saisie'+(med?' de "'+med.dci+'"':'')+' ('+ligne.quantite_physique+') ?'))return;
+    try{
+      await this._cancelLineMovements(ligne);
+      await this._softDelete('lignes_inventaire',ligne);
+    }catch(err){console.error(err);alert('Suppression impossible : '+(err.message||err));return;}
+    if(fromModal){this._editLigneId=null;this.closeModal('modal-inv-entry');}
+    this.toast('Saisie supprimee');
+    this.updateBadge();
+    await this.renderInventoried(document.getElementById('search-inv').value||'');
+  },
+  async deleteInvProduct(medId){
+    const med=await db.get('medicaments',medId);
+    const lignes=(await db.getAll('lignes_inventaire')).filter(l=>l.inventaire_id===this.invId&&l.medicament_id===medId);
+    if(!lignes.length)return;
+    if(!confirm('Retirer "'+(med?med.dci:'ce produit')+'" de cet inventaire ?\n'+lignes.length+' saisie(s) seront supprimees.'))return;
+    try{
+      for(const l of lignes){await this._cancelLineMovements(l);await this._softDelete('lignes_inventaire',l);}
+    }catch(err){console.error(err);alert('Suppression impossible : '+(err.message||err));return;}
+    this.toast('Produit retire de l\'inventaire');
+    this.updateBadge();
+    await this.renderInventoried(document.getElementById('search-inv').value||'');
+  },
+
+  // Ouvre le modal d'ajout de saisie pour un médicament déjà inventorié
+  async openInvEntry(medId){
+    await this._openInvEntryModal(medId);
+  },
+
+  // Édite une ligne existante
+  async editInvLine(ligneId){
+    const lignes=await db.getAll('lignes_inventaire');
+    const ligne=lignes.find(l=>l.id===ligneId);
+    if(!ligne)return;
+    const med=await db.get('medicaments',ligne.medicament_id);
+    this._editLigneId=ligneId;
+    await this._openInvEntryModal(med.id,ligne);
+  },
+
+  async _openInvEntryModal(medId, existingLigne=null){
+    const med=await db.get('medicaments',medId);
+    const allLots=await db.getAll('lots');
+    const mLots=allLots.filter(l=>l.medicament_id===medId&&l.actif!==false);
+    const preferredLot=this._pendLot;
+    this._pendMed=med;
+    this._pendLot=null;
+    this._editLigneId=existingLigne?existingLigne.id:null;
+    document.getElementById('inv-entry-del')?.classList.toggle('hidden',!existingLigne);
+    document.getElementById('inv-entry-title').textContent=med.dci;
+    document.getElementById('inv-entry-info').textContent=
+      (med.unite_comptage?'Unité : '+med.unite_comptage:'')
+      +(med.prix_achat_unitaire?' · PA actuel : '+med.prix_achat_unitaire:'');
+    document.getElementById('inv-entry-qty').value=existingLigne?existingLigne.quantite_physique:'';
+    document.getElementById('inv-entry-unit').innerHTML=this.unitOptions(existingLigne&&existingLigne.unite_comptage?existingLigne.unite_comptage:med.unite_comptage);
+    document.getElementById('inv-entry-pa').value=existingLigne&&existingLigne.prix_achat_saisi?existingLigne.prix_achat_saisi:(med.prix_achat_unitaire||'');
+    document.getElementById('inv-entry-obs').value=existingLigne?existingLigne.observation||'':'';
+    // Lots existants + creation rapide de nouveau lot
+    const lotsDiv=document.getElementById('inv-entry-lots');
+    const lotSel=document.getElementById('inv-entry-lot-sel');
+    lotsDiv.classList.remove('hidden');
+    lotSel.innerHTML='<option value="">Sans lot specifique</option>';
+    mLots
+      .sort((a,b)=>(a.date_peremption||'9999-12-31').localeCompare(b.date_peremption||'9999-12-31'))
+      .forEach(l=>{
+        const sel=(existingLigne&&existingLigne.lot_id===l.id)||(!existingLigne&&preferredLot&&preferredLot.id===l.id)?' selected':'';
+        const stockLabel=l.stock_theorique!==undefined?' - stock '+l.stock_theorique:'';
+        lotSel.innerHTML+=`<option value="${l.id}"${sel}>Lot ${l.numero_lot}${l.date_peremption?' - exp '+l.date_peremption:''}${stockLabel}</option>`;
+      });
+    lotSel.innerHTML+='<option value="__new">+ Creer un nouveau lot</option>';
+    if(!mLots.length&&!existingLigne&&!preferredLot)lotSel.value='__new';
+    document.getElementById('inv-new-lot-num').value='';
+    document.getElementById('inv-new-lot-exp').value='';
+    document.getElementById('inv-new-lot-stock').value='0';
+    this.toggleInvNewLot();
+    this.openModal('modal-inv-entry');
+    setTimeout(()=>document.getElementById('inv-entry-qty').focus(),350);
+  },
+
+  toggleInvNewLot(){
+    const sel=document.getElementById('inv-entry-lot-sel');
+    const box=document.getElementById('inv-entry-new-lot');
+    if(!sel||!box)return;
+    box.classList.toggle('hidden',sel.value!=='__new');
+  },
+
+  async _createInvLotIfNeeded(){
+    const sel=document.getElementById('inv-entry-lot-sel');
+    if(!sel||sel.value!=='__new')return sel?sel.value||null:null;
+    if(!this._pendMed){alert('Medicament introuvable pour ce lot');return null;}
+    const num=document.getElementById('inv-new-lot-num').value.trim();
+    if(!num){alert('Saisissez le numero du nouveau lot');return null;}
+    const existing=await db.byIndex('lots','medicament_id',this._pendMed.id);
+    const same=existing.find(l=>l.actif!==false&&String(l.numero_lot||'').toLowerCase()===num.toLowerCase());
+    if(same)return same.id;
+    return await db.add('lots',{
+      medicament_id:this._pendMed.id,
+      numero_lot:num,
+      date_peremption:document.getElementById('inv-new-lot-exp').value||'',
+      stock_theorique:Number(document.getElementById('inv-new-lot-stock').value||0),
+      prix_achat_unitaire:Number(document.getElementById('inv-entry-pa').value||this._pendMed.prix_achat_unitaire||0),
+      actif:true,
+      synced:false
+    });
+  },
+
+  async saveInvEntry(){
+    const qty=document.getElementById('inv-entry-qty').value;
+    if(qty===''){alert('Saisissez une quantité');return;}
+    if(!this.invId){alert('Aucun inventaire en cours.');this.closeModal('modal-inv-entry');return;}
+    const paVal=document.getElementById('inv-entry-pa').value;
+    const unite=this.normalizeCountUnit(document.getElementById('inv-entry-unit').value);
+    const lotId=await this._createInvLotIfNeeded();
+    if(document.getElementById('inv-entry-lot-sel').value==='__new'&&!lotId)return;
+    const obs=document.getElementById('inv-entry-obs').value;
+    // Mettre à jour le prix d'achat du médicament si modifié
+    if(paVal!==''&&this._pendMed){
+      const med=await db.get('medicaments',this._pendMed.id);
+      if(med&&Number(paVal)!==med.prix_achat_unitaire){
+        med.prix_achat_unitaire=Number(paVal);med.synced=false;
+        await db.put('medicaments',med);
+      }
+    }
+    if(this._editLigneId){
+      // Modifier la ligne existante
+      const lignes=await db.getAll('lignes_inventaire');
+      const ligne=lignes.find(l=>l.id===this._editLigneId);
+      if(ligne){
+        await this._cancelLineMovements(ligne);
+        ligne.quantite_physique=Number(qty);
+        ligne.unite_comptage=unite;
+        ligne.observation=obs;
+        ligne.lot_id=lotId;
+        ligne.prix_achat_saisi=paVal!==''?Number(paVal):null;
+        ligne.synced=false;
+        await db.put('lignes_inventaire',ligne);
+        if(lotId&&window.stockAPI){await stockAPI.createMovement({medicament_id:this._pendMed.id,lot_id:lotId,type_mouvement:'inventaire',quantite:Number(qty),reference_document:this.invId,ligne_id:ligne.id,observation:obs});}
+        this.toast('✓ Saisie modifiée');
+      }
+    } else {
+      const newLineId=await db.add('lignes_inventaire',{
+        inventaire_id:this.invId,
+        medicament_id:this._pendMed.id,
+        lot_id:lotId,
+        famille_id:this._pendMed.famille_id,
+        quantite_physique:Number(qty),
+        unite_comptage:unite,
+        observation:obs,
+        prix_achat_saisi:paVal!==''?Number(paVal):null,
+        synced:false
+      });
+            if(lotId&&window.stockAPI){await stockAPI.createMovement({medicament_id:this._pendMed.id,lot_id:lotId,type_mouvement:'inventaire',quantite:Number(qty),reference_document:this.invId,ligne_id:newLineId,observation:obs});}
+      this.toast('✓ '+this._pendMed.dci+' : '+qty+' '+unite+' enregistré');
+    }
+    this.closeModal('modal-inv-entry');
+    this.updateBadge();
+    await this.renderInventoried(document.getElementById('search-inv').value||'');
+  },
+
+  // ── MODAL AJOUTER PRODUIT (picker) ──
+  async openAddProduct(){
+    if(!this.invId){alert('Démarrez d\'abord un inventaire.');return;}
+    document.getElementById('add-prod-search').value='';
+    await this.searchAddProduct('');
+    this.openModal('modal-add-product');
+    setTimeout(()=>document.getElementById('add-prod-search').focus(),350);
+  },
+
+  async searchAddProduct(q){
+    const meds=await db.search(q,this._famFilter,80);
+    const c=document.getElementById('add-prod-list');
+    if(!c)return;
+    if(!meds.length){
+      c.innerHTML='<p style="color:var(--gray);text-align:center;padding:1.5rem;font-size:.88rem">Aucun médicament trouvé.</p>';
+      return;
+    }
+    // Produits déjà inventoriés dans cette session
+    const lignes=await db.getAll('lignes_inventaire');
+    const invLines=lignes.filter(l=>l.inventaire_id===this.invId);
+    const fams=await db.getAll('familles');
+    const lots=await db.getAll('lots');
+    // Tri alphabétique
+    meds.sort((a,b)=>a.dci.localeCompare(b.dci));
+    c.innerHTML=meds.map(m=>{
+      const fam=fams.find(f=>f.id===m.famille_id);
+      const dejaInv=invLines.some(l=>l.medicament_id===m.id);
+      const mLots=lots.filter(l=>l.medicament_id===m.id&&l.actif!==false);
+      const badge=dejaInv?'<span style="background:#f0fdf4;color:var(--sec);font-size:.7rem;font-weight:700;padding:.1rem .4rem;border-radius:10px;margin-left:.35rem">✓ inventorié</span>':'';
+      return `<div class="item" style="padding:.75rem;margin-bottom:.4rem;cursor:pointer" onclick="app.selectAddProduct('${m.id}')">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between">
+          <h4 style="font-size:.88rem;flex:1">${m.dci}${badge}</h4>
+        </div>
+        <div class="meta" style="font-size:.75rem">${fam?fam.nom_famille:''}${m.code_interne?' · '+m.code_interne:''}${m.unite_comptage?' · '+m.unite_comptage:''}</div>
+        ${mLots.length?'<div style="font-size:.72rem;color:var(--gray)">'+mLots.map(l=>'Lot '+l.numero_lot).join(' | ')+'</div>':''}
+      </div>`;
+    }).join('');
+  },
+
+  async selectAddProduct(medId){
+    this.closeModal('modal-add-product');
+    await this._openInvEntryModal(medId);
+  },
+
+  // Compatibilité scanner (openQtyWithLot redirige vers le nouveau modal)
+  async openQty(medId){ await this._openInvEntryModal(medId); },
+  async openQtyLot(medId,lotId){
+    const lot=await db.get('lots',lotId);
+    const med=await db.get('medicaments',medId);
+    this._pendLot=lot;
+    await this._openInvEntryModal(medId);
+    document.getElementById('inv-entry-lot-sel').value=lotId;
+  },
+  openQtyWithLot(med,lot,code){
+    this._pendMed=med;this._pendLot=lot;
+    this._openInvEntryModal(med.id);
+  },
+  async saveQty(){ await this.saveInvEntry(); },
+  async searchMedsListe(q){
+    const meds=await db.search(q,null,100);
+    const c=document.getElementById('med-list');
+    if(!c)return;
+    if(!meds.length){c.innerHTML='<p style="color:var(--gray);text-align:center;padding:2rem;font-size:.9rem">Aucun médicament.</p>';return;}
+    const fams=await db.getAll('familles');
+    c.innerHTML=meds.map(m=>{
+      const f=fams.find(x=>x.id===m.famille_id);
+      return `<div class="item">
+        <h4>${m.dci}</h4>
+        <div class="meta">${f?f.nom_famille:''} · ${m.code_interne||''} · ${m.unite_comptage||''}</div>
+        ${m.prix_achat_unitaire?`<div style="font-size:.78rem;color:var(--gray)">PA : ${m.prix_achat_unitaire} · PV : ${m.prix_vente_unitaire||0}</div>`:''}
+        <button onclick="app.openEditMed('${m.id}')" style="margin-top:.5rem;padding:.45rem .8rem;border:1.5px solid var(--pri);background:var(--pri-l);color:var(--pri);border-radius:8px;font-weight:700;font-size:.8rem;cursor:pointer">&#9998; Modifier</button>
+      </div>`;
+    }).join('');
+  },
+
+  // ── FAB MENU ──
+  _fabOpen:false,
+  toggleFabMenu(){
+    this._fabOpen=!this._fabOpen;
+    document.getElementById('fab-menu').classList.toggle('hidden',!this._fabOpen);
+    document.getElementById('fab-overlay').classList.toggle('hidden',!this._fabOpen);
+    document.getElementById('fab-icon').textContent=this._fabOpen?'✕':'+';
+    document.getElementById('fab-label').textContent=this._fabOpen?'Fermer':'Actions';
+  },
+  closeFabMenu(){
+    this._fabOpen=false;
+    document.getElementById('fab-menu').classList.add('hidden');
+    document.getElementById('fab-overlay').classList.add('hidden');
+    document.getElementById('fab-icon').textContent='+';
+    document.getElementById('fab-label').textContent='Actions';
+  },
+  fabAction(type){
+    this.closeFabMenu();
+    if(!this.invId&&(type==='pick'||type==='create'||type==='lot'||type==='barcode')){
+      // Allow create/lot/barcode even without active inventory
+    }
+    if(type==='pick') this.openAddProduct();
+    else if(type==='create') this.openCreate();
+    else if(type==='lot') this.openAddLot();
+    else if(type==='barcode') this.openAddBarcode();
+  },
+
+  // ── MODAL : AJOUTER LOT ──
+  _lotMedId:null,
+  async openAddLot(){
+    this._lotMedId=null;
+    document.getElementById('lot-med-search').value='';
+    document.getElementById('lot-med-list').innerHTML='';
+    document.getElementById('lot-form-area').style.display='none';
+    document.getElementById('al-save-btn').style.display='none';
+    document.getElementById('al-num').value='';
+    document.getElementById('al-exp').value='';
+    document.getElementById('al-stk').value='0';
+    this.openModal('modal-add-lot');
+    setTimeout(()=>document.getElementById('lot-med-search').focus(),350);
+  },
+  async searchLotMed(q){
+    const meds=await db.search(q,this._famFilter,60);
+    meds.sort((a,b)=>a.dci.localeCompare(b.dci));
+    const c=document.getElementById('lot-med-list');
+    if(!meds.length){c.innerHTML='<p style="color:var(--gray);text-align:center;padding:1rem;font-size:.85rem">Aucun médicament trouvé.</p>';return;}
+    const lots=await db.getAll('lots');
+    c.innerHTML=meds.map(m=>{
+      const nb=lots.filter(l=>l.medicament_id===m.id&&l.actif!==false).length;
+      return `<div class="item" style="padding:.6rem;margin-bottom:.35rem;cursor:pointer${this._lotMedId===m.id?';border:2px solid var(--pri)':''}" onclick="app.selectLotMed('${m.id}')">
+        <strong style="font-size:.88rem">${m.dci}</strong>
+        <div class="meta" style="font-size:.75rem">${nb} lot(s) existant(s) · ${m.unite_comptage||''}</div>
+      </div>`;
+    }).join('');
+  },
+  async selectLotMed(medId){
+    this._lotMedId=medId;
+    const med=await db.get('medicaments',medId);
+    document.getElementById('lot-med-selected').textContent='Médicament : '+med.dci;
+    document.getElementById('lot-form-area').style.display='block';
+    document.getElementById('al-save-btn').style.display='flex';
+    // Highlight selected
+    await this.searchLotMed(document.getElementById('lot-med-search').value||'');
+    setTimeout(()=>document.getElementById('al-num').focus(),100);
+  },
+  async saveLot(){
+    if(!this._lotMedId){alert('Sélectionnez un médicament');return;}
+    const num=document.getElementById('al-num').value.trim();
+    if(!num){alert('Saisissez le numéro de lot');return;}
+    try{
+      await db.add('lots',{
+        medicament_id:this._lotMedId,
+        numero_lot:num,
+        date_peremption:document.getElementById('al-exp').value||null,
+        stock_theorique:Number(document.getElementById('al-stk').value||0),
+        actif:true,synced:false
+      });
+      this.closeModal('modal-add-lot');
+      this.toast('✓ Lot '+num+' ajouté');
+    }catch(e){alert('Erreur : '+e.message);}
+  },
+
+  // ── MODAL : AJOUTER CODE-BARRE ──
+  _bcMedId:null,
+  _bcScanPending:false,
+  async openAddBarcode(){
+    this._bcMedId=null;
+    this._bcScanPending=false;
+    document.getElementById('bc-med-search').value='';
+    document.getElementById('bc-med-list').innerHTML='';
+    document.getElementById('bc-form-area').style.display='none';
+    document.getElementById('bc-save-btn').style.display='none';
+    document.getElementById('bc-val').value='';
+    this.openModal('modal-add-barcode');
+    setTimeout(()=>document.getElementById('bc-med-search').focus(),350);
+  },
+  async searchBcMed(q){
+    const meds=await db.search(q,null,60);
+    meds.sort((a,b)=>a.dci.localeCompare(b.dci));
+    const c=document.getElementById('bc-med-list');
+    if(!meds.length){c.innerHTML='<p style="color:var(--gray);text-align:center;padding:1rem;font-size:.85rem">Aucun médicament trouvé.</p>';return;}
+    const lots=await db.getAll('lots');
+    c.innerHTML=meds.map(m=>{
+      const mLots=lots.filter(l=>l.medicament_id===m.id&&l.actif!==false);
+      return `<div class="item" style="padding:.6rem;margin-bottom:.35rem;cursor:pointer${this._bcMedId===m.id?';border:2px solid var(--pri)':''}" onclick="app.selectBcMed('${m.id}')">
+        <strong style="font-size:.88rem">${m.dci}</strong>
+        <div class="meta" style="font-size:.75rem">${m.code_interne||''}${mLots.length?' · '+mLots.length+' lot(s)':''}</div>
+      </div>`;
+    }).join('');
+  },
+  async selectBcMed(medId){
+    this._bcMedId=medId;
+    const med=await db.get('medicaments',medId);
+    const lots=await db.getAll('lots');
+    const mLots=lots.filter(l=>l.medicament_id===medId&&l.actif!==false);
+    document.getElementById('bc-med-selected').textContent='Médicament : '+med.dci;
+    // Populate target selector with lots
+    const sel=document.getElementById('bc-target-sel');
+    sel.innerHTML='<option value="medicament">Le médicament (DCI)</option>';
+    mLots.forEach(l=>sel.innerHTML+=`<option value="lot:${l.id}">Lot ${l.numero_lot}${l.date_peremption?' · exp '+l.date_peremption:''}</option>`);
+    document.getElementById('bc-form-area').style.display='block';
+    document.getElementById('bc-save-btn').style.display='flex';
+    await this.searchBcMed(document.getElementById('bc-med-search').value||'');
+    setTimeout(()=>document.getElementById('bc-val').focus(),100);
+  },
+  bcTargetChange(){},
+  scanForBarcode(){
+    this._bcScanPending=true;
+    this.closeModal('modal-add-barcode');
+    this.go('scan');
+  },
+  async saveBarcode(){
+    if(!this._bcMedId){alert('Sélectionnez un médicament');return;}
+    const val=document.getElementById('bc-val').value.trim();
+    if(!val){alert('Saisissez ou scannez un code-barre');return;}
+    const tgt=document.getElementById('bc-target-sel').value;
+    try{
+      if(tgt==='medicament'){
+        await db.add('codes_medicaments',{code:val,medicament_id:this._bcMedId,type_code:'manuel',actif:true});
+      } else {
+        const lotId=tgt.replace('lot:','');
+        await db.add('codes_lots',{code:val,medicament_id:this._bcMedId,lot_id:lotId,type_code:'manuel',actif:true});
+      }
+      this.closeModal('modal-add-barcode');
+      this.toast('✓ Code-barre enregistré');
+    }catch(e){
+      if(e.name==='ConstraintError')alert('Ce code est déjà associé à un autre médicament/lot.');
+      else alert('Erreur : '+e.message);
+    }
+  },
+
+  // ── CRÉATION PRODUIT ──
+  openCreate(){
+    this._resetCreate();
+    this.openModal('modal-create');
+  },
+
+  _resetCreate(){
+    ['qc-fam','qc-dci','qc-des','qc-code'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+    document.getElementById('qc-unit').value='BOITE';
+    document.getElementById('qc-cat').value='recouvrable';
+    document.getElementById('qc-pv').value='0';
+    document.getElementById('qc-pa').value='0';
+    document.getElementById('has-lot').checked=false;
+    this.toggleLot();
+    ['qc-lot','qc-exp'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+    document.getElementById('qc-stk').value='0';
+    document.getElementById('bc-list').innerHTML=`<div class="bc-row"><input type="text" class="bc-inp" placeholder="Code-barre ou QR Code" inputmode="none"><button class="bc-scan" onclick="app.scanForField(0)" title="Scanner">&#9641;</button></div>`;
+    const r=document.querySelector('input[name="bc-tgt"][value="dci"]');if(r)r.checked=true;
+    document.getElementById('fam-sug').classList.add('hidden');
+    this.step(1);
+  },
+
+  step(n){
+    [1,2,3].forEach(i=>{
+      const p=document.getElementById('sp'+i);
+      if(p){p.classList.remove('active');p.style.display='none';}
+      const si=document.getElementById('si'+i);
+      if(si){si.classList.remove('active','done');}
+    });
+    for(let i=1;i<n;i++){document.getElementById('si'+i)?.classList.add('done');}
+    const sp=document.getElementById('sp'+n);
+    if(sp){sp.style.display='block';sp.classList.add('active');}
+    document.getElementById('si'+n)?.classList.add('active');
+    if(n===3){
+      const hasLot=document.getElementById('has-lot').checked;
+      const ro=document.getElementById('ropt-lot');
+      if(ro)ro.style.opacity=hasLot?'1':'0.4';
+      const rl=document.querySelector('input[name="bc-tgt"][value="lot"]');
+      if(rl)rl.disabled=!hasLot;
+      if(!hasLot){const rd=document.querySelector('input[name="bc-tgt"][value="dci"]');if(rd)rd.checked=true;}
+    }
+  },
+
+  toggleLot(){
+    const on=document.getElementById('has-lot').checked;
+    document.getElementById('lot-box').classList.toggle('hidden',!on);
+  },
+
+  async suggestFam(val){
+    const sug=document.getElementById('fam-sug');
+    if(!val){sug.classList.add('hidden');return;}
+    const fams=await db.getAll('familles');
+    const m=fams.filter(f=>f.nom_famille.toLowerCase().includes(val.toLowerCase()));
+    if(!m.length){sug.classList.add('hidden');return;}
+    sug.innerHTML=m.map(f=>`<div onclick="document.getElementById('qc-fam').value='${f.nom_famille.replace(/'/g,"\\'")}';document.getElementById('fam-sug').classList.add('hidden')">${f.nom_famille}</div>`).join('');
+    sug.classList.remove('hidden');
+  },
+
+  addBcField(){
+    const c=document.getElementById('bc-list');
+    const n=c.querySelectorAll('.bc-row').length;
+    if(n>=5){alert('Maximum 5 codes-barres');return;}
+    const d=document.createElement('div');
+    d.className='bc-row';
+    d.innerHTML=`<input type="text" class="bc-inp" placeholder="Code-barre ou QR Code" inputmode="none"><button class="bc-scan" onclick="app.scanForField(${n})" title="Scanner">&#9641;</button><button class="bc-del" onclick="this.parentNode.remove()">&#x2715;</button>`;
+    c.appendChild(d);
+  },
+
+  scanForField(idx){
+    this._scanForField=idx;
+    this._scanForModal=true;
+    this.closeModal('modal-create');
+    this.go('scan');
+  },
+
+  async createProduct(){
+    const fam=document.getElementById('qc-fam').value.trim();
+    const dci=document.getElementById('qc-dci').value.trim();
+    if(!fam||!dci){alert('Famille et DCI sont obligatoires');this.step(1);return;}
+    const hasLot=document.getElementById('has-lot').checked;
+    const lotNum=document.getElementById('qc-lot').value.trim();
+    if(hasLot&&!lotNum){alert('Saisissez le numéro de lot');this.step(2);return;}
+    try{
+      let famId;
+      const fams=await db.byIndex('familles','nom_famille',fam);
+      famId=fams.length?fams[0].id:await db.add('familles',{nom_famille:fam,actif:true});
+
+      const medId=await db.add('medicaments',{
+        famille_id:famId,dci,
+        designation:document.getElementById('qc-des').value.trim()||dci,
+        unite_comptage:document.getElementById('qc-unit').value,
+        code_interne:document.getElementById('qc-code').value.trim(),
+        prix_vente_unitaire:Number(document.getElementById('qc-pv').value||0),
+        prix_achat_unitaire:Number(document.getElementById('qc-pa').value||0),
+        categorie_financiere:document.getElementById('qc-cat').value,
+        actif:true,synced:false
+      });
+
+      let lotId=null;
+      if(hasLot&&lotNum){
+        lotId=await db.add('lots',{
+          medicament_id:medId,numero_lot:lotNum,
+          date_peremption:document.getElementById('qc-exp').value,
+          stock_theorique:Number(document.getElementById('qc-stk').value||0),
+          actif:true,synced:false
+        });
+      }
+
+      const tgt=document.querySelector('input[name="bc-tgt"]:checked')?.value||'dci';
+      for(const inp of document.querySelectorAll('.bc-inp')){
+        const v=inp.value.trim();if(!v)continue;
+        if(tgt==='lot'&&lotId){
+          try{await db.add('codes_lots',{code:v,medicament_id:medId,lot_id:lotId,type_code:'manuel',actif:true});}catch(e){}
+        }else{
+          try{await db.add('codes_medicaments',{code:v,medicament_id:medId,type_code:'manuel',actif:true});}catch(e){}
+        }
+      }
+      this.closeModal('modal-create');
+      await this.loadFamilles();
+      await this.renderInventoried(document.getElementById('search-inv').value||'');
+      this.toast('✓ Produit "'+dci+'" créé');
+    }catch(err){alert('Erreur : '+err.message);}
+  },
+
+  // ── SCANNER ──
+  async startCamera(){
+    const v=document.getElementById('camera-preview');
+    const mw=document.getElementById('manual-wrap');
+    try{
+      this._stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}});
+      v.srcObject=this._stream;
+      this._scanning=true;
+      document.getElementById('scan-result').innerHTML='<p style="text-align:center;color:var(--gray);padding:1rem;font-size:.88rem">Pointez vers un code-barres...</p>';
+      this._scanLoop(v);
+    }catch(e){
+      mw.style.display='block';
+      document.getElementById('scan-result').innerHTML='<p style="color:var(--gray);padding:.75rem;font-size:.85rem">Caméra non disponible. Saisissez le code manuellement.</p>';
+    }
+  },
+
+  stopCamera(){
+    this._scanning=false;
+    if(this._stream){this._stream.getTracks().forEach(t=>t.stop());this._stream=null;}
+  },
+
+  async _scanLoop(v){
+    if(!this._scanning)return;
+    if(this._detector&&v.readyState===v.HAVE_ENOUGH_DATA){
+      try{
+        const bc=await this._detector.detect(v);
+        if(bc.length){this.stopCamera();this.processCode(bc[0].rawValue);return;}
+      }catch(e){}
+    }
+    requestAnimationFrame(()=>this._scanLoop(v));
+  },
+
+  async processCode(raw){
+    if(!raw)return;
+    if(window.serverInventory&&serverInventory.handleScannedCode&&serverInventory.handleScannedCode(raw))return;
+    if(this.applyServerConfig(raw))return;
+    const res=document.getElementById('scan-result');
+    res.innerHTML=`<p style="padding:.75rem;font-size:.88rem;color:var(--gray)">Code : <strong>${raw}</strong> — Recherche...</p>`;
+
+    // Si on scannait pour remplir le champ code-barre du modal-add-barcode
+    if(this._bcScanPending){
+      this._bcScanPending=false;
+      document.getElementById('bc-val').value=raw;
+      this.openModal('modal-add-barcode');
+      return;
+    }
+
+    // Si on scannait pour remplir un champ du modal-create (étape 3)
+    if(this._scanForModal&&this._scanForField!==null){
+      const inputs=document.querySelectorAll('.bc-inp');
+      if(inputs[this._scanForField])inputs[this._scanForField].value=raw;
+      this._scanForModal=false;this._scanForField=null;
+      this.openCreate();
+      return;
+    }
+
+    try{
+      // 1. codes_lots
+      const cl=await db.oneByIndex('codes_lots','code',raw);
+      if(cl&&cl.actif!==false){
+        const med=await db.get('medicaments',cl.medicament_id);
+        const lot=await db.get('lots',cl.lot_id);
+        if(this.invId)this.openQtyWithLot(med,lot,raw);
+        else res.innerHTML=`<div class="item"><h4>${med.dci}</h4><div class="meta">Lot : ${lot.numero_lot} · Exp : ${lot.date_peremption}</div></div>`;
+        return;
+      }
+      // 2. codes_medicaments
+      const cm=await db.oneByIndex('codes_medicaments','code',raw);
+      if(cm&&cm.actif!==false){
+        const med=await db.get('medicaments',cm.medicament_id);
+        if(this.invId){const bestLot=window.fefoAPI?await fefoAPI.getBestLotForDispensation(med.id):null;this.openQtyWithLot(med,bestLot,raw);}
+        else res.innerHTML=`<div class="item"><h4>${med.dci}</h4><div class="meta">${med.code_interne||''}</div></div>`;
+        return;
+      }
+      // 3. GS1 composite avec fallback
+      const parsed=window.parseGS1Barcode?window.parseGS1Barcode(raw):null;
+      if(parsed&&parsed.productCode){
+        const gs1Med=await db.oneByIndex('codes_medicaments','code',parsed.productCode);
+        if(gs1Med&&gs1Med.actif!==false){
+          const med=await db.get('medicaments',gs1Med.medicament_id);
+          const lots=await db.byIndex('lots','medicament_id',med.id);
+          let lot=lots.find(l=>l.numero_lot===parsed.lotNumber);
+          if(!lot&&parsed.lotNumber){
+            const lotId=await db.add('lots',{medicament_id:med.id,numero_lot:parsed.lotNumber,date_peremption:parsed.expiryDate||'',stock_theorique:0,actif:true,synced:false});
+            lot=await db.get('lots',lotId);
+          }
+          if(lot){try{await db.add('codes_lots',{code:raw,medicament_id:med.id,lot_id:lot.id,type_code:'gs1',actif:true,synced:false});}catch(_e){}}
+          if(this.invId)this.openQtyWithLot(med,lot||null,raw);
+          else res.innerHTML='<div class="item"><h4>'+med.dci+'</h4><div class="meta">Lot : '+(lot?lot.numero_lot:'')+' - Exp : '+(lot?lot.date_peremption:'')+'</div></div>';
+          return;
+        }
+      }
+      // 4. Inconnu
+      this._pendCode=raw;
+      document.getElementById('unk-code').textContent=raw;
+      document.getElementById('assoc-q').value='';
+      document.getElementById('assoc-res').innerHTML='';
+      this.openModal('modal-unknown');
+    }catch(e){res.innerHTML=`<p style="color:var(--danger);padding:.75rem">Erreur : ${e.message}</p>`;}
+  },
+
+  serverConfigFromCode(raw){
+    const value=String(raw||'').trim();
+    if(!value)return '';
+    if(/^https?:\/\/[^\s]+$/i.test(value))return value;
+    if(value.startsWith('PHARMASTOCK_SERVER:'))return value.slice('PHARMASTOCK_SERVER:'.length).trim();
+    if(value.startsWith('PHARMASTOCK|'))return value.slice('PHARMASTOCK|'.length).trim();
+    if(value.startsWith('PHARMASTOCK_CONFIG:')){
+      try{
+        const config=JSON.parse(value.slice('PHARMASTOCK_CONFIG:'.length));
+        return String(config.serverUrl||config.url||'').trim();
+      }catch(e){return '';}
+    }
+    return '';
+  },
+
+  normalizeServerUrl(value){
+    const url=String(value||'').trim().replace(/\/$/,'');
+    if(!/^https?:\/\/[A-Za-z0-9.-]+(?::\d+)?(?:\/.*)?$/i.test(url))return '';
+    return url;
+  },
+
+  applyServerConfig(raw){
+    const serverUrl=this.normalizeServerUrl(this.serverConfigFromCode(raw));
+    if(!serverUrl)return false;
+    localStorage.setItem('pharmaServerUrl',serverUrl);
+    this.SERVER_URL=serverUrl;
+    const syncInput=document.getElementById('sync-server-url');
+    if(syncInput)syncInput.value=serverUrl;
+    const syncDisplay=document.getElementById('sync-url-display');
+    if(syncDisplay)syncDisplay.textContent=serverUrl+'  (serveur local)';
+    this.stopCamera();
+    this._serverConfigScan=false;
+    this.toast('Serveur local actualise : '+serverUrl);
+    if(window.serverInventory&&serverInventory.setServerUrl)serverInventory.setServerUrl(serverUrl);
+    return true;
+  },
+
+  scanServerConfig(){
+    this._serverConfigScan=true;
+    if(window.AndroidScanner&&AndroidScanner.scan){
+      AndroidScanner.scan();
+      this.toast('Scannez le QR code affiche sur le serveur');
+      return;
+    }
+    if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
+      this.go('scan');
+      const res=document.getElementById('scan-result');
+      if(res)res.innerHTML='<p style="text-align:center;color:var(--gray);padding:1rem;font-size:.88rem">Scannez le QR code du serveur local.</p>';
+      return;
+    }
+    const code=prompt('Scannez ou collez le QR serveur');
+    if(code)this.applyServerConfig(code);
+  },
+
+  async searchAssoc(q){
+    const meds=await db.search(q,null,20);
+    const c=document.getElementById('assoc-res');
+    c.innerHTML=meds.map(m=>`<div class="item" style="padding:.6rem;margin-bottom:.4rem" onclick="app.assocCode('${m.id}')"><strong>${m.dci}</strong><div class="meta">${m.code_interne||''}</div></div>`).join('');
+  },
+
+  async assocCode(medId){
+    if(!this._pendCode)return;
+    try{
+      await db.add('codes_medicaments',{code:this._pendCode,medicament_id:medId,type_code:'manuel',actif:true});
+      this.closeModal('modal-unknown');
+      this.toast('✓ Code associé');
+    }catch(e){alert('Ce code est déjà associé à un autre médicament.');}
+  },
+
+  // ── EXPORT ──
+  async exportInventory(inventoryId=this.invId){
+    if(typeof XLSX==='undefined'){
+      this.toast('Chargement Excel... Reessayez dans 3 secondes');
+      const s=document.createElement('script');
+      s.src='./xlsx.full.min.js';
+      document.head.appendChild(s); return;
+    }
+    this.showLoader(true);
+    try{
+      const [meds,fams,lots,cm,cl,allLines]=await Promise.all([
+        db.getAll('medicaments'),db.getAll('familles'),db.getAll('lots'),
+        db.getAll('codes_medicaments'),db.getAll('codes_lots'),db.getAll('lignes_inventaire')
+      ]);
+      const lignes=inventoryId?allLines.filter(l=>l.inventaire_id===inventoryId):allLines;
+
+      // En-têtes fixes — ligne 1 de la feuille
+      const H=['famille','dci','designation','unite_comptage','code_interne',
+               'prix_vente_unitaire','prix_achat_unitaire','categorie_financiere',
+               'numero_lot','date_peremption','stock_theorique',
+               'quantite_physique','observation','code_1','code_2','code_3'];
+
+      // On construit un tableau de tableaux (aoa) — garantit les en-têtes en ligne 1
+      const aoa=[H]; // première ligne = en-têtes
+
+      for(const m of meds){
+        if(m.actif===false)continue;
+        const fam=fams.find(f=>f.id===m.famille_id);
+        const mLots=lots.filter(l=>l.medicament_id===m.id&&l.actif!==false);
+        const mCodes=cm.filter(c=>c.medicament_id===m.id&&c.actif!==false);
+        const base=[
+          fam?fam.nom_famille:'',
+          m.dci||'',
+          m.designation||m.dci||'',
+          m.unite_comptage||'BOITE',
+          m.code_interne||'',
+          m.prix_vente_unitaire||0,
+          m.prix_achat_unitaire||0,
+          m.categorie_financiere||'recouvrable'
+        ];
+        if(!mLots.length){
+          const lg=lignes.slice().reverse().find(l=>l.medicament_id===m.id&&!l.lot_id);
+          const rowBase=[...base];
+          if(lg&&lg.unite_comptage)rowBase[3]=lg.unite_comptage;
+          aoa.push([...rowBase,'','','',
+            lg?lg.quantite_physique:'',
+            lg?lg.observation||'':'',
+            mCodes[0]?mCodes[0].code:'',
+            mCodes[1]?mCodes[1].code:'',
+            mCodes[2]?mCodes[2].code:''
+          ]);
+        } else {
+          for(const l of mLots){
+            const lCodes=cl.filter(c=>c.lot_id===l.id&&c.actif!==false);
+            const lg=lignes.slice().reverse().find(li=>li.medicament_id===m.id&&li.lot_id===l.id);
+            const allC=[...lCodes.map(c=>c.code),...mCodes.map(c=>c.code)];
+            const rowBase=[...base];
+            if(lg&&lg.unite_comptage)rowBase[3]=lg.unite_comptage;
+            aoa.push([...rowBase,
+              l.numero_lot||'',
+              l.date_peremption||'',
+              l.stock_theorique||0,
+              lg?lg.quantite_physique:'',
+              lg?lg.observation||'':'',
+              allC[0]||'',allC[1]||'',allC[2]||''
+            ]);
+          }
+        }
+      }
+
+      // Si base vide, ligne exemple
+      if(aoa.length===1){
+        aoa.push(['ANALGESIQUES','PARACETAMOL 500MG','PARACETAMOL','BOITE','MED001',
+                  100,80,'recouvrable','LOT001','2027-12-31',100,'','',
+                  '3400936859627','','']);
+      }
+
+      const wb=XLSX.utils.book_new();
+
+      // Feuille Inventaire — données réelles
+      const ws=XLSX.utils.aoa_to_sheet(aoa);
+      ws['!cols']=[{wch:20},{wch:32},{wch:25},{wch:12},{wch:12},{wch:15},
+                   {wch:15},{wch:16},{wch:14},{wch:14},{wch:12},{wch:14},
+                   {wch:20},{wch:18},{wch:18},{wch:18}];
+      XLSX.utils.book_append_sheet(wb,ws,'Inventaire');
+
+      // Feuille MODELE_IMPORT — en-têtes + 1 ligne exemple vide pour guider la saisie
+      const wsM=XLSX.utils.aoa_to_sheet([
+        H,
+        ['FAMILLE_ICI','DCI_ICI','DESIGNATION','BOITE','CODE001',
+         0,0,'recouvrable','NUMERO_LOT','2027-12-31',0,'','','','','']
+      ]);
+      wsM['!cols']=ws['!cols'];
+      XLSX.utils.book_append_sheet(wb,wsM,'MODELE_IMPORT');
+
+      XLSX.writeFile(wb,'Inventaire_'+new Date().toISOString().split('T')[0]+'.xlsx');
+      this.toast((aoa.length-1)+' ligne(s) exportee(s) avec en-tetes');
+    }finally{this.showLoader(false);}
+  },
+
+  async exportInventoryById(id){
+    await this.exportInventory(id);
+  },
+
+    // ── IMPORT EXCEL ──
+  async importExcel(){
+    if(typeof XLSX==='undefined'){this.toast('Bibliotheque Excel non chargee. Patientez...');return;}
+    const fi=document.getElementById('file-import');
+    if(!fi.files.length){alert('Selectionnez un fichier Excel');return;}
+    this.showLoader(true);
+    const reader=new FileReader();
+    reader.onload=async e=>{
+      try{
+        const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+        const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+        let nNew=0,nUpdate=0,nSkip=0;
+
+        for(const row of rows){
+          const fv=(row.famille||row.FAMILLE||'').trim();
+          const dv=(row.dci||row.DCI||row.nom||'').trim();
+          if(!fv||!dv){nSkip++;continue;}
+
+          // 1. Famille — créer si absente
+          let fid;
+          const fx=await db.byIndex('familles','nom_famille',fv);
+          fid=fx.length?fx[0].id:await db.add('familles',{nom_famille:fv,actif:true,synced:false});
+
+          // 2. Médicament — chercher par DCI dans la même famille
+          const allMeds=await db.getAll('medicaments');
+          let med=allMeds.find(m=>m.famille_id===fid&&m.dci.toLowerCase()===dv.toLowerCase()&&m.actif!==false);
+
+          if(med){
+            // Mettre à jour les infos manquantes (prix, unite, code_interne)
+            let changed=false;
+            if(!med.unite_comptage&&row.unite_comptage){med.unite_comptage=row.unite_comptage;changed=true;}
+            if(!med.code_interne&&(row.code_interne||row.code)){med.code_interne=row.code_interne||row.code;changed=true;}
+            if(!med.prix_vente_unitaire&&row.prix_vente_unitaire){med.prix_vente_unitaire=Number(row.prix_vente_unitaire);changed=true;}
+            if(!med.prix_achat_unitaire&&row.prix_achat_unitaire){med.prix_achat_unitaire=Number(row.prix_achat_unitaire);changed=true;}
+            if(changed){med.synced=false;await db.put('medicaments',med);}
+            nUpdate++;
+          } else {
+            // Créer le médicament
+            const newId=await db.add('medicaments',{
+              famille_id:fid,dci:dv,
+              designation:row.designation||dv,
+              unite_comptage:row.unite_comptage||'BOITE',
+              code_interne:row.code_interne||row.code||'',
+              prix_vente_unitaire:Number(row.prix_vente_unitaire||0),
+              prix_achat_unitaire:Number(row.prix_achat_unitaire||0),
+              categorie_financiere:row.categorie_financiere||'recouvrable',
+              actif:true,synced:false
+            });
+            med=await db.get('medicaments',newId);
+            nNew++;
+          }
+
+          // 3. Lot — créer si absent pour ce médicament
+          const lotNum=(row.numero_lot||'').trim();
+          if(lotNum){
+            const existLots=await db.byIndex('lots','medicament_id',med.id);
+            let lot=existLots.find(l=>l.numero_lot===lotNum);
+            if(!lot){
+              await db.add('lots',{
+                medicament_id:med.id,
+                numero_lot:lotNum,
+                date_peremption:row.date_peremption||'',
+                stock_theorique:Number(row.stock_theorique||0),
+                actif:true,synced:false
+              });
+            } else {
+              // Mettre à jour stock si absent
+              if(!lot.stock_theorique&&row.stock_theorique){
+                lot.stock_theorique=Number(row.stock_theorique);
+                lot.synced=false;
+                await db.put('lots',lot);
+              }
+            }
+          }
+
+          // 4. Codes-barres — ajouter ceux qui n'existent pas encore
+          for(const k of['code_1','code_2','code_3']){
+            const code=(row[k]||'').trim();
+            if(!code)continue;
+            try{
+              await db.add('codes_medicaments',{
+                code,medicament_id:med.id,type_code:'import',actif:true
+              });
+            }catch(er){} // Ignore si code déjà existant (contrainte unique)
+          }
+        }
+
+        await this.loadFamilles();
+        this.toast(nNew+' crees, '+nUpdate+' mis a jour'+(nSkip?' ('+nSkip+' ignores)':''));
+      }catch(err){alert('Erreur import : '+err.message);}
+      finally{this.showLoader(false);}
+    };
+    reader.readAsArrayBuffer(fi.files[0]);
+  },
+
+  async openEditMed(medId){
+    const med=await db.get('medicaments',medId);
+    if(!med)return;
+    this._editMedId=medId;
+    document.getElementById('edit-med-dci').value=med.dci||'';
+    document.getElementById('edit-med-des').value=med.designation||'';
+    document.getElementById('edit-med-pa').value=med.prix_achat_unitaire||0;
+    document.getElementById('edit-med-unit').value=med.unite_comptage||'BOITE';
+    document.getElementById('edit-med-title').textContent='Modifier : '+med.dci;
+    this.openModal('modal-edit-med');
+  },
+
+  async saveEditMed(){
+    const medId=this._editMedId;
+    if(!medId)return;
+    const med=await db.get('medicaments',medId);
+    if(!med)return;
+    const newDci=document.getElementById('edit-med-dci').value.trim();
+    if(!newDci){alert('La DCI ne peut pas être vide');return;}
+    med.dci=newDci;
+    med.designation=document.getElementById('edit-med-des').value.trim()||newDci;
+    med.prix_achat_unitaire=Number(document.getElementById('edit-med-pa').value||0);
+    med.unite_comptage=document.getElementById('edit-med-unit').value;
+    med.synced=false;
+    await db.put('medicaments',med);
+    this.closeModal('modal-edit-med');
+    this.toast('✓ Médicament modifié');
+    await this.searchMedsListe(document.getElementById('search-med').value||'');
+  },
+
+  downloadTemplate(){
+    if(typeof XLSX==='undefined'){this.toast('Chargement Excel... Reessayez');return;}
+    const wb=XLSX.utils.book_new();
+    const H=['famille','dci','designation','unite_comptage','code_interne',
+             'prix_vente_unitaire','prix_achat_unitaire','categorie_financiere',
+             'numero_lot','date_peremption','stock_theorique',
+             'quantite_physique','observation','code_1','code_2','code_3'];
+    // Ligne 1 = en-têtes, lignes 2-3 = exemples
+    const ws=XLSX.utils.aoa_to_sheet([
+      H,
+      ['ANALGESIQUES','PARACETAMOL 500MG','PARACETAMOL','BOITE','MED001',
+       100,80,'recouvrable','LOT001','2027-12-31',100,'','','3400936859627','',''],
+      ['ANTIBIOTIQUES','AMOXICILLINE 500MG','AMOXICILLINE','BOITE','MED002',
+       500,400,'recouvrable','LOT002','2026-06-30',50,'','','','','']
+    ]);
+    ws['!cols']=[{wch:20},{wch:32},{wch:25},{wch:12},{wch:12},{wch:15},
+                 {wch:15},{wch:16},{wch:14},{wch:14},{wch:12},{wch:14},
+                 {wch:20},{wch:18},{wch:18},{wch:18}];
+    XLSX.utils.book_append_sheet(wb,ws,'Modele_Import');
+    XLSX.writeFile(wb,'Modele_Import_Pharma.xlsx');
+  },
+
+  // ── SYNC ──
+  // ---- SYNC OFFLINE-FIRST ----
+  _serverUrl(){
+    return (localStorage.getItem('pharmaServerUrl') || this.SERVER_URL || '').replace(/\/$/,'');
+  },
+
+  _serverCandidates(){
+    const urls=[
+      localStorage.getItem('pharmaServerUrl'),
+      this.SERVER_URL,
+      (location.origin&&location.origin.startsWith('http'))?location.origin:'',
+      'http://192.168.2.100:3780',
+      ...this.SERVER_CANDIDATES
+    ].map(u=>String(u||'').trim().replace(/\/$/,'')).filter(Boolean);
+    return [...new Set(urls)];
+  },
+
+  async _probeServer(url){
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),1800);
+    try{
+      const res=await fetch(url+'/api/pwa-sync/status',{cache:'no-store',signal:controller.signal});
+      return res.ok && (await res.json()).ok===true;
+    }catch(e){
+      return false;
+    }finally{
+      clearTimeout(timer);
+    }
+  },
+
+  async _resolveServerUrl(){
+    for(const url of this._serverCandidates()){
+      if(await this._probeServer(url)){
+        localStorage.setItem('pharmaServerUrl',url);
+        this.SERVER_URL=url;
+        if(window.serverInventory) window.serverInventory.setServerUrl(url);
+        return url;
+      }
+    }
+    throw new Error('Serveur local inaccessible');
+  },
+
+  async _fetchServer(path, options={}){
+    const url=await this._resolveServerUrl();
+    const headers=options.body ? {'Content-Type':'application/json', ...options.headers} : options.headers;
+    const res=await fetch(url+path, {
+      ...options,
+      headers,
+      cache:'no-store',
+      signal:AbortSignal.timeout(15000)
+    });
+    const text = await res.text();
+    let data = {};
+    try{ data = text ? JSON.parse(text) : {}; }
+    catch(e){ throw new Error('Reponse serveur invalide: '+text.substring(0,120)); }
+    if(!res.ok) throw new Error(data.error || data.message || ('HTTP '+res.status));
+    return data;
+  },
+
+  _googleConfig(){
+    const config=window.PHARMA_AUTH || {};
+    if(!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(config.syncUrl || '') ||
+       !/^[\w-]{20,100}$/.test(config.firebaseWebApiKey || '')) return null;
+    return config;
+  },
+
+  _googleSessionActive(){
+    return Boolean(this._googleSession?.expiresAt > Date.now()+30000);
+  },
+
+  async signInGoogle(form){
+    const config=this._googleConfig();
+    if(!window.isSecureContext || !config) return;
+    const submit=form.querySelector('[type="submit"]');
+    const email=document.getElementById('google-auth-email');
+    const password=document.getElementById('google-auth-password');
+    const status=document.getElementById('google-auth-error');
+    if(submit.disabled) return;
+    submit.disabled=true;
+    status.textContent='';
+    try{
+      const response=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+encodeURIComponent(config.firebaseWebApiKey),{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({email:email.value.trim(),password:password.value,returnSecureToken:true}),
+        signal:AbortSignal.timeout(20000)
+      });
+      const data=await response.json();
+      const lifetime=Number(data.expiresIn);
+      if(!response.ok || !data.idToken || !Number.isFinite(lifetime) || lifetime<=0){
+        status.textContent='Connexion refusée. Vérifie ton e-mail et ton mot de passe PharmaStock.';
+        return;
+      }
+      this._googleSession={idToken:data.idToken,expiresAt:Date.now()+lifetime*1000};
+      this.closeModal('modal-google-auth');
+      await this.syncGoogleDrive();
+    }catch(error){
+      status.textContent='Connexion indisponible. Réessaie lorsque tu as Internet.';
+    }finally{
+      password.value='';
+      submit.disabled=false;
+    }
+  },
+
+  signOutGoogle(){
+    this._googleSession=null;
+    document.getElementById('google-auth-signout').classList.add('hidden');
+    this.toast('Compte PharmaStock déconnecté');
+  },
+
+  async _fetchGoogleSync(payload){
+    const config=this._googleConfig();
+    const res=await fetch(config.syncUrl,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify(payload),
+      signal:AbortSignal.timeout(45000)
+    });
+    const data=await res.json();
+    if(data.code==='AUTH_REQUIRED'){
+      this._googleSession=null;
+      throw new Error('Accès refusé. Connecte-toi avec un compte PharmaStock autorisé.');
+    }
+    if(!res.ok || data.ok!==true) throw new Error(data.error || 'Réponse Google Sheets invalide');
+    return data;
+  },
+
+  async _googleChanges(){
+    const changes={};
+    let total=0;
+    for(const table of this.GOOGLE_SYNC_TABLES){
+      const rows=await db.getAll(table,true);
+      const unsynced=rows.filter(r=>r && r.synced===false);
+      if(unsynced.length){changes[table]=unsynced;total+=unsynced.length;}
+    }
+    return {changes,total};
+  },
+
+  async syncGoogleDrive(){
+    this.closeModal('modal-sync');
+    if(!navigator.onLine){this.toast('Internet requis pour Google Sheets');return;}
+    if(!window.isSecureContext){this.toast('Ouvre PharmaStock depuis son adresse HTTPS');return;}
+    if(!this._googleConfig()){this.toast('Connexion Google Sheets à configurer par l’administrateur');return;}
+    if(!this._googleSessionActive()){
+      this.openModal('modal-google-auth');
+      return;
+    }
+    if(this._googleSyncRunning) return;
+    this._googleSyncRunning=true;
+    this.showLoader(true);
+    let sent=0, received=0, skipped=0;
+    try{
+      const deviceId=localStorage.getItem('pharmaDeviceHolder') || localStorage.getItem('pharmaDeviceId') || 'telephone-pwa';
+      const since=localStorage.getItem('pharmaGoogleSyncSince') || '';
+      const local=await this._googleChanges();
+      sent=local.total;
+      const result=await this._fetchGoogleSync({action:'sync',idToken:this._googleSession?.idToken,device_id:deviceId,since,changes:local.changes});
+      for(const [table, records] of Object.entries(local.changes)){
+        for(const record of records) await db.acknowledgeSync(table,record);
+      }
+      for(const [table, records] of Object.entries(result.data || {})){
+        if(!this.GOOGLE_SYNC_TABLES.includes(table) || !Array.isArray(records)) continue;
+        for(const record of records){
+          if(!record || !record.id) continue;
+          const existing=await db.get(table,record.id);
+          if(existing && existing.synced===false){skipped++;continue;}
+          record.synced=true;
+          if(existing) await db.put(table,{...existing,...record,synced:true});
+          else {try{await db.add(table,record);}catch(e){await db.put(table,record);}}
+          received++;
+        }
+      }
+      if(result.server_time) localStorage.setItem('pharmaGoogleSyncSince', result.server_time);
+      await this.loadFamilles();
+      if(this.invId) await this.renderInventoried('');
+      await this.updateBadge();
+      this.toast(`Google Sheets : ${sent} envoye(s), ${received} recu(s)${skipped?', '+skipped+' garde(s) localement':''}`);
+    }catch(err){
+      console.error(err);
+      this.toast('Google Sheets indisponible : '+err.message);
+    }finally{this._googleSyncRunning=false;this.showLoader(false);}
+  },
+
+  async _upsertLocal(store, record){
+    if(!record || !record.id)return false;
+    const existing = await db.get(store, record.id);
+    if(existing && existing.synced===false)return false;
+    record.synced = true;
+    if(existing) await db.put(store, {...existing, ...record, synced:true});
+    else { try{ await db.add(store, record); } catch(e){ await db.put(store, record); } }
+    return true;
+  },
+
+  async syncPush(){
+    this.closeModal('modal-sync');
+    this.showLoader(true);
+    let total=0;
+    try{
+      const entities=['familles','medicaments','lots','codes_medicaments','codes_lots','inventaires','lignes_inventaire','mouvements_stock','dispensations','clients_espc','clients_mouvements_comptables','clients_valeurs_stock','factures_clients','lignes_facture_client'];
+      const payload={};
+      for(const e of entities){
+        const all=await db.getAll(e,true);
+        const toSync=all.filter(r=>r.synced===false);
+        if(toSync.length){payload[e]=toSync;total+=toSync.length;}
+      }
+      if(!total){this.toast('Deja a jour');await this.updateBadge();return;}
+      const deviceId = localStorage.getItem('pharmaDeviceHolder') || localStorage.getItem('pharmaDeviceId') || 'telephone-pwa';
+      const result=await this._fetchServer('/api/pwa-sync/push',{method:'POST',body:JSON.stringify({deviceId,entities:payload})});
+      if(result.ok){
+        for(const [e,records] of Object.entries(payload)){
+          for(const r of records) await db.acknowledgeSync(e,r);
+        }
+        this.toast((result.received||total)+' enregistrement(s) envoyes au serveur local');
+      }
+      await this.updateBadge();
+    }catch(err){
+      this.toast('Serveur local indisponible : donnees conservees hors-ligne');
+      console.error(err);
+    }finally{this.showLoader(false);}
+  },
+
+  async syncPull(skipConfirm=false){
+    this.closeModal('modal-sync');
+    if(!skipConfirm && !confirm('Télécharger la base depuis le serveur local pour travailler hors-ligne ?\nLes donnees locales non synchronisees seront conservees.'))return;
+    this.showLoader(true);
+    let total=0, skipped=0;
+    try{
+      const result=await this._fetchServer('/api/pwa-sync/base',{method:'GET'});
+      const data=result.data||{};
+      for(const e of['familles','medicaments','lots','codes_medicaments','codes_lots','clients_espc','clients_mouvements_comptables','clients_valeurs_stock','factures_clients','lignes_facture_client']){
+        for(const r of(data[e]||[])){
+          const changed=await this._upsertLocal(e,r);
+          if(changed)total++; else skipped++;
+        }
+      }
+      await this.loadFamilles();
+      if(this.invId) await this.renderInventoried('');
+      this.toast(total+' element(s) prepares hors-ligne depuis '+(result.source||'serveur')+(skipped?' | '+skipped+' locaux conserves':''));
+      await this.updateBadge();
+    }catch(err){
+      this.toast('Preparation impossible : verifier le Wi-Fi du serveur');
+      console.error(err);
+    }finally{this.showLoader(false);}
+  },
+  async updateBadge(){
+    let n=0;
+    for(const e of['inventaires','lignes_inventaire','medicaments','lots','mouvements_stock','dispensations','clients_espc','clients_mouvements_comptables','clients_valeurs_stock','factures_clients','lignes_facture_client']){
+      const all=await db.getAll(e,true);
+      n+=all.filter(r=>r.synced===false).length;
+    }
+    const btn=document.getElementById('btn-sync');
+    const old=btn.querySelector('.badge');if(old)old.remove();
+    if(n>0){const b=document.createElement('span');b.className='badge';b.textContent=n>99?'99+':n;btn.appendChild(b);}
+  },
+
+  // ── UTILS ──
+  openModal(id){
+    document.getElementById(id).classList.remove('hidden');
+    if(id==='modal-sync'){
+      const d=document.getElementById('sync-url-display');
+      if(d) d.textContent='Serveur local : '+this._serverUrl()+' · Google Sheets : '+(this._googleSessionActive()?'connecté':'connexion requise');
+      document.getElementById('google-auth-signout').classList.toggle('hidden',!this._googleSessionActive());
+      const s=document.getElementById('sync-status');
+      if(s) s.innerHTML=navigator.onLine
+        ? '<span style="color:#10b981">&#9679; En ligne</span>'
+        : '<span style="color:#ef4444">&#9679; Hors ligne</span>';
+    }
+  },
+  closeModal(id){document.getElementById(id).classList.add('hidden');},
+  showLoader(on){document.getElementById('loader').classList.toggle('hidden',!on);},
+  toast(msg){
+    const t=document.getElementById('toast');
+    t.textContent=msg;t.classList.add('show');
+    clearTimeout(this._toastT);
+    this._toastT=setTimeout(()=>t.classList.remove('show'),3000);
+  }
+};
+
+// ═══════════════════════════════════════════════════
+// DÉMARRAGE
+// ═══════════════════════════════════════════════════
+window.app=app;
+window.db=db;
+
+window.addEventListener('load',async()=>{
+  try{
+    await db.init();
+  }catch(e){
+    document.body.innerHTML=`<div style="padding:2rem;text-align:center;font-family:sans-serif"><h2 style="color:#ef4444">Erreur</h2><p style="margin-top:1rem;color:#64748b">${e}</p><p style="margin-top:1rem;font-size:.85rem">Essayez de vider le cache du navigateur.</p></div>`;
+    return;
+  }
+  await app.init();
+});
+
+// Charger XLSX en arrière-plan (pas bloquant)
+(function(){
+  const s=document.createElement('script');
+  s.src='./xlsx.full.min.js';
+  s.async=true;
+  document.head.appendChild(s);
+})();
+
+// Fermer modaux au clic extérieur
+document.addEventListener('click',e=>{
+  if(e.target.classList.contains('modal'))app.closeModal(e.target.id);
+  if(!e.target.closest('.sw'))document.getElementById('fam-sug')?.classList.add('hidden');
+});
+
+// ── SERVICE WORKER ──
+if('serviceWorker' in navigator && !location.hostname.includes('claudeusercontent.com')){
+  const hadController=!!navigator.serviceWorker.controller;
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./service-worker.js').then(reg=>{
+      const proposer=w=>{
+        if(w&&confirm('Une nouvelle version de PharmaStock est disponible.\nMettre a jour maintenant ? (vos donnees locales sont conservees)'))w.postMessage({type:'SKIP_WAITING'});
+      };
+      if(reg.waiting&&navigator.serviceWorker.controller)proposer(reg.waiting);
+      reg.addEventListener('updatefound',()=>{
+        const w=reg.installing;
+        if(w)w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller)proposer(w);});
+      });
+      setInterval(()=>reg.update().catch(()=>{}),3600000);
+    }).catch(err=>console.error('SW echec:',err));
+    let recharge=false;
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!hadController||recharge)return;recharge=true;location.reload();});
+  });
+}
+// Stockage persistant : empeche le navigateur de purger les donnees d'inventaire
+if(navigator.storage&&navigator.storage.persist){navigator.storage.persist().catch(()=>{});}
+// Bandeau hors-ligne
+(function(){
+  const bar=document.createElement('div');
+  bar.id='offline-bar';
+  bar.setAttribute('role','status');
+  bar.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#334155;color:#fff;text-align:center;font-size:.72rem;padding:.25rem .5rem;pointer-events:none;display:none';
+  bar.textContent='Mode hors ligne - vos saisies sont enregistrees sur cet appareil';
+  document.body.appendChild(bar);
+  const maj=()=>{bar.style.display=navigator.onLine?'none':'block';};
+  window.addEventListener('online',maj);window.addEventListener('offline',maj);maj();
+})();
+</script>
+<script src="./server-inventory.js?v=26"></script>
+<script src="./gs1.js"></script>
+<script src="./stock.js"></script>
+<script src="./fefo.js"></script>
+<script src="./expiry.js"></script>
+<script src="./dispensation.js"></script>
+<script src="./dashboard.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
